@@ -1,0 +1,8 @@
+# Text files, because that's what the tweets are initially stored as
+*.txt
+
+# Pickle files
+*.p
+
+# Csv files
+*.csv
