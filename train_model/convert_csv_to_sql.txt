@@ -1,0 +1,19 @@
+# Make a table that will house a minimal amount of the data:
+
+create table study2_data_minimal
+(tweet_num_in_total_dataset int,
+twitter_number int,
+category int,
+twitter_handle varchar(100),
+within_handle_id int,
+link varchar(500),
+tweet varchar(300),
+danger_coder_1 varchar(10),
+danger_code_1 int,
+danger_coder_2 varchar(10),
+danger_code2 int,
+retweets int);
+
+set client_encoding to 'latin1';
+
+copy study2_data_minimal from '/Users/ilya/Projects/danger_tweets/train_model/masters_twitter_data_part_2_minimal_with_text.csv' delimiter ',' csv header;
