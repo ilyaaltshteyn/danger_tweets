@@ -1,19 +1,43 @@
-# Make a table that will house a minimal amount of the data:
+/* FIRST EXPERIMENT WITH SQL! */
 
-create table study2_data_minimal
-(tweet_num_in_total_dataset int,
-twitter_number int,
-category int,
-twitter_handle varchar(100),
-within_handle_id int,
-link varchar(500),
-tweet varchar(300),
-danger_coder_1 varchar(10),
-danger_code_1 int,
-danger_coder_2 varchar(10),
-danger_code2 int,
-retweets int);
+/* Make a table that will house the minimal data with full tweet text and retweet counts: */
 
-set client_encoding to 'latin1';
+CREATE TABLE study2_data_minimal
+(tweet_num_in_total_dataset INT,
+twitter_number INT,
+category INT,
+twitter_handle VARCHAR(100),
+within_handle_id INT,
+link VARCHAR(500),
+tweet VARCHAR(300),
+danger_coder_1 VARCHAR(10),
+danger_code_1 INT,
+danger_coder_2 VARCHAR(10),
+danger_code_2 INT,
+retweets INT);
 
-copy study2_data_minimal from '/Users/ilya/Projects/danger_tweets/train_model/masters_twitter_data_part_2_minimal_with_text.csv' delimiter ',' csv header;
+SET CLIENT_ENCODING TO 'latin1';
+
+COPY study2_data_minimal FROM '/Users/ilya/Projects/danger_tweets/train_model/masters_twitter_data_part_2_minimal_with_text.csv' DELIMITER ',' CSV HEADER;
+
+/* Look through table to make sure tweets properly imported and danger codes don't have any weird values */
+
+SELECT tweet, danger_code_1, danger_code_2 FROM study2_data_minimal;
+
+SELECT DISTINCT danger_code_1 FROM study2_data_minimal;
+SELECT DISTINCT danger_code_2 FROM study2_data_minimal;
+
+/* Inspect and remove rows where danger_code_2 = 3 */
+SELECT * FROM study2_data_minimal WHERE danger_code_2=3;
+DELETE FROM study2_data_minimal WHERE danger_code_2=3;
+
+/* Create new columns based on danger_code_1 and danger_code_2 */
+ALTER TABLE study2_data_minimal ADD real_danger BOOLEAN;
+UPDATE study2_data_minimal SET real_danger = (danger_code_1 = 1 AND danger_code_2 = 1);
+ALTER TABLE study2_data_minimal ADD real_non_danger BOOLEAN;
+UPDATE study2_data_minimal SET real_danger = (danger_code_1 = 0 AND danger_code_2 = 0);
+
+/* Write data to CSV file */
+COPY (SELECT tweet, danger_code_1, danger_code_2 from study2_data_minimal) TO '/Users/ilya/Projects/danger_tweets/train_model/study2_minimal_outof_psql.csv' WITH CSV;
+
+
