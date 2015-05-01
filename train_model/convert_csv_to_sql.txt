@@ -35,9 +35,9 @@ DELETE FROM study2_data_minimal WHERE danger_code_2=3;
 ALTER TABLE study2_data_minimal ADD real_danger BOOLEAN;
 UPDATE study2_data_minimal SET real_danger = (danger_code_1 = 1 AND danger_code_2 = 1);
 ALTER TABLE study2_data_minimal ADD real_non_danger BOOLEAN;
-UPDATE study2_data_minimal SET real_danger = (danger_code_1 = 0 AND danger_code_2 = 0);
+UPDATE study2_data_minimal SET real_non_danger = (danger_code_1 = 0 AND danger_code_2 = 0);
 
 /* Write data to CSV file */
-COPY (SELECT tweet, danger_code_1, danger_code_2 from study2_data_minimal) TO '/Users/ilya/Projects/danger_tweets/train_model/study2_minimal_outof_psql.csv' WITH CSV;
+COPY (SELECT tweet, real_danger, real_non_danger from study2_data_minimal WHERE (real_danger OR real_non_danger = true)) TO '/Users/ilya/Projects/danger_tweets/train_model/study2_minimal_outof_psql.csv' WITH CSV;
 
 
