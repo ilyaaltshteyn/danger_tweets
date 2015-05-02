@@ -25,7 +25,7 @@ while True:
             'language' : 'en'})
         with open(file_name, "a") as output:
             for item in r.get_iterator():
-                
+
                 # If 1 hour has passed since the beginning of the file, then
                 # send script to the exception that updates the filename.
                 if datetime.now() > cutoff_time:
@@ -33,9 +33,11 @@ while True:
                 random_filter = np.random.random()
 
                 # Only print the tweet to the datafile if it's not a retweet 
-                # AND only with 1% probability.
-                if 'retweeted_status' not in item and random_filter <= .01:
-                    print item
+                # AND only with 1% probability AND it's not a reply tweet.
+                if 'retweeted_status' not in item and \
+                    random_filter <= .01 and \
+                    item['in_reply_to_user_id'] == None:
+                    print item['text']
                     output.write(str(item) + "\n")
                 delay = max(8, delay/2)
 
@@ -44,7 +46,7 @@ while True:
         # If you ended up here because an hour has passed since the beginning
         # of the old file, update the filename and reconnect to the API.
         if e.message == 'Time for new file':
-            cutoff_time = datetime.now() + timedelta(seconds = 5)
+            cutoff_time = datetime.now() + timedelta(hours = 1)
             file_name = file_location + str(cutoff_time) + '.txt'
             print 'Next file!' + file_name
         else:
@@ -53,9 +55,6 @@ while True:
             print "Waiting " + str(delay) + " seconds"
             time.sleep(delay)
             delay *= 2
-
-cutoff_time = datetime.now() + timedelta(minutes = 1)
-file_name = file_location + str(cutoff_time) + '.txt'
 
 
 
