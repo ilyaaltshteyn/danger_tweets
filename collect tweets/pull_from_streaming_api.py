@@ -4,10 +4,20 @@ import time
 from datetime import datetime, timedelta
 import numpy as np
 
-consumer_key = 'PYD3Vu4GLJ88SSUti2aRK8GNH'
-consumer_secret = 'lWb4RLVrqnFL7xgYszkjKWeHlNWhlgA3Rerv4mBXB0ukc6kJdO'
-access_token_key = '2289200166-jHIq4sAHm75R9ijQ4TM8nkBarRw3ZeCo0ipSLwA'
-access_token_secret = '5ivDgreVyAUIIxJeb00CUBeGLjYt7XYhdmfyB0dTn70ae'
+#Get api details:
+api_details = []
+api_details_path = '/Users/ilya/Projects/danger_tweets/collect tweets/'
+with open(api_details_path + 'api_details.txt', 'r') as a:
+    info = a.readlines()
+    api_details.append(info)
+api_details = api_details[0][0].split(',')
+
+#Setup api details:
+consumer_key = api_details[0]
+consumer_secret = api_details[1]
+access_token_key = api_details[2]
+access_token_secret = api_details[3]
+
 file_location = '/Users/ilya/Projects/danger_tweets/collect tweets/'
 
 delay = 8 # seconds
@@ -29,14 +39,15 @@ while True:
                 # If 1 hour has passed since the beginning of the file, then
                 # send script to the exception that updates the filename.
                 if datetime.now() > cutoff_time:
-                    raise ValueError('Time for new file')
+                    raise Exception('Time for new file')
                 random_filter = np.random.random()
 
                 # Only print the tweet to the datafile if it's not a retweet 
                 # AND only with 1% probability AND it's not a reply tweet.
                 if 'retweeted_status' not in item and \
-                    random_filter <= .01 and \
+                    random_filter <= .05 and \
                     item['in_reply_to_user_id'] == None:
+                    
                     print item['text']
                     output.write(str(item) + "\n")
                 delay = max(8, delay/2)
