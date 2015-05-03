@@ -3,28 +3,40 @@ from TwitterAPI import TwitterAPI
 import time
 from datetime import datetime, timedelta
 import numpy as np
+import signal
 
-#Get api details:
+# Setup file logging and make sure you're in the script's own directory:
+import logging, os
+current_dir = os.path.dirname(os.path.realpath(__file__))
+os.chdir(current_dir)
+logging.basicConfig(filename='debug_pull_from_streaming_api.log', level=logging.DEBUG)  
+
+# Set script to terminate in x seconds:
+signal.alarm(65)
+
+# ***----SETUP API DETAILS ---- ***
+
 api_details = []
-api_details_path = '/Users/ilya/Projects/danger_tweets/collect tweets/'
+api_details_path = str(current_dir) + 'collect tweets/'
 with open(api_details_path + 'api_details.txt', 'r') as a:
     info = a.readlines()
     api_details.append(info)
 api_details = api_details[0][0].split(',')
 
-#Setup api details:
 consumer_key = api_details[0]
 consumer_secret = api_details[1]
 access_token_key = api_details[2]
 access_token_secret = api_details[3]
 
-file_location = '/Users/ilya/Projects/danger_tweets/collect tweets/'
+#***---- CALL API AND RECORD TWEETS! --- ****
+
+file_location = str(current_dir) + 'collect tweets/collected_original_tweets/'
 
 delay = 8 # seconds
 
 # Cutoff time is the time at which the current file should be completed and 
 # the next file should begin. Set filename based on cutoff time.
-cutoff_time = datetime.now() + timedelta(hours = 1)
+cutoff_time = datetime.now() + timedelta(seconds = 30)
 file_name = file_location + str(cutoff_time) + '.txt'
 
 while True:
@@ -47,7 +59,6 @@ while True:
                 if 'retweeted_status' not in item and \
                     random_filter <= .05 and \
                     item['in_reply_to_user_id'] == None:
-                    
                     print item['text']
                     output.write(str(item) + "\n")
                 delay = max(8, delay/2)
@@ -57,9 +68,9 @@ while True:
         # If you ended up here because an hour has passed since the beginning
         # of the old file, update the filename and reconnect to the API.
         if e.message == 'Time for new file':
-            cutoff_time = datetime.now() + timedelta(hours = 1)
+            cutoff_time = datetime.now() + timedelta(seconds = 30)
             file_name = file_location + str(cutoff_time) + '.txt'
-            print 'Next file!' + file_name
+            print '\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nNext file!' + file_name
         else:
             print "Error"
             print time.ctime()

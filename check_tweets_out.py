@@ -2,12 +2,20 @@
 
 # ----****** FIRST, CREATE THE API CALLER *****------
 
-import oauth2
-import time
-import urllib2
-import json
+import oauth2, time, urllib2, json, logging, signal
 
-path = '/Users/ilya/Projects/danger_tweets/collect tweets/'
+# Setup file logging and make sure you're in the script's own directory:
+import logging, os
+current_dir = os.path.dirname(os.path.realpath(__file__))
+os.chdir(current_dir)
+logging.basicConfig(filename='debug_check_tweets.log', level=logging.DEBUG)  
+
+# Make it so the script dies after a certain amount of time, and sleeps before
+# starting so it's properly synced with pull_from_streaming_api.py
+signal.alarm(65)
+time.sleep(30)
+
+path = str(current_dir) +'collect tweets/'
 
 #Get api details:
 api_details = []
@@ -63,7 +71,7 @@ def file_collector(path):
     Returns list of files that still need to be hydrated."""
     with open(path + 'hydrated_tweets_log.txt', 'r') as c:
         hydrated = c.readlines()
-        files = [x for x in listdir(path) if x not in hydrated]
+        files = [x for x in listdir(path) if (x + '\n') not in hydrated]
     return files
 
 def logger(path, filename):
@@ -81,6 +89,7 @@ def tweets_to_list_converter(file):
                 one_tweet_id = ast.literal_eval(line[:-1])['id']
                 tweets_list.append(str(one_tweet_id))
             except:
+                logging.exception()
                 continue
     return tweets_list
 
@@ -89,34 +98,56 @@ def tweets_to_list_converter(file):
 # ----**** NOW ACTUALLY RUN ALL THOSE FUNCTIONS TO GET HYDRATED DATA! ***---
 
 import time
-path = '/Users/ilya/Projects/danger_tweets/collect tweets/collected_original_tweets/'
+path = str(current_dir) + 'collect tweets/collected_original_tweets/'
 
 # Create the log:
 with open(path + 'hydrated_tweets_log.txt', 'w') as create_log:
     pass
 
+while True:
+    try:
+        # Get list of tweet files that still need to be hydrated:
+        files_list = file_collector(path)
 
-# Get list of tweet files that still need to be hydrated:
-files_list = file_collector(path)
-# Check to see if there is more than one tweets file. If there is not, then 
-# wait an hour. This ensures that only completed tweets files get hydrated.
-if len(files_list) == 3:
-    time.sleep(1)
-    print 'Sleeping to wait for new files'
-# Take the first file in the list and convert its tweet ids to strings.
-stringy_tweets = tweets_to_list_converter(files_list[2])
-# Hydrate 100 tweets at a time with those ids:
-begin = 0
-for x in range(len(stringy_tweets)/100 - 1):
-    end = begin + 100
-    hydrated_tweets = api_request(stringy_tweets[begin:end])
-    new_filename = path + 'hydrated_tweets/hydrated' + files_list[2]
-    with open(new_filename, 'w') as a:
-        for element in hydrated_tweets.iteritems():
-            a.write(str(element) + "\n")
-    end += 100
+        # Remove some files from the list that are not data files:
+        files_list.remove('hydrated_tweets')
+        files_list.remove('hydrated_tweets_log.txt')
 
-logger(path, files_list[2])
-# Add the current file to the log:
-logger(path, files_list[1])
+        # Check to see if there is more than one tweets file. If there is not, 
+        # then wait an hour. This ensures that only completed tweets files get 
+        # hydrated.
+        if len(files_list) < 4:
+            time.sleep(31)
+            print 'Sleeping to wait for new files'
 
+        # If there are enough files in files list, loop through them and hydrated
+        # their tweets:
+        for new_file in files_list[1:]:
+            print new_file
+            # Take the first file in the list and convert its tweet ids to strings.
+            filename = path + new_file
+            stringy_tweets = tweets_to_list_converter(filename)
+            # Hydrate 100 tweets at a time with those ids:
+            begin = 0
+            for x in range(len(stringy_tweets)/100 + 1):
+                print 'step %d of file %s' % (x, new_file)
+                end = begin + 100
+                try:
+                    hydrated_tweets = api_request(stringy_tweets[begin:end])
+                    new_filename = path + 'hydrated_tweets/hydrated' + str(x) + ' ' + new_file
+                    with open(new_filename, 'w') as a:
+                        for element in hydrated_tweets.iteritems():
+                            a.write(str(element) + "\n")
+                    begin += 100
+                except:
+                    logging.exception()
+                    time.sleep(30)
+                    continue
+
+            # Add the current file to the log:
+            logger(path, new_file)
+
+    except:
+        logging.exception()
+        time.sleep(30)
+        continue
