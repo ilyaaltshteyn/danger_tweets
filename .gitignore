@@ -6,3 +6,9 @@
 
 # Csv files
 *.csv
+
+# Debug files
+*.log
+
+# nohup out files
+*.out
