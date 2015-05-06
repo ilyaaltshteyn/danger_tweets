@@ -13,7 +13,7 @@ os.chdir(current_dir)
 logging.basicConfig(filename='debug_pull_from_streaming_api.log', level=logging.DEBUG)  
 
 # Set script to terminate in x seconds:
-signal.alarm(183)
+signal.alarm(180)
 
 # ***----SETUP API DETAILS ---- ***
 
@@ -36,9 +36,11 @@ file_location = str(current_dir) + '/collected_original_tweets'
 delay = 8 # seconds
 
 # Cutoff time is the time at which the current file should be completed and 
-# the next file should begin. Set filename based on cutoff time.
-cutoff_time = datetime.now() + timedelta(minutes = 30)
-file_name = file_location + '/' + str(cutoff_time) + '.txt'
+# the next file should begin. Set filename based on cutoff time. Make sure
+# that filename starts with a 4-digit number.
+cutoff_time = datetime.now() + timedelta(minutes = 1)
+file_number = 1
+file_name = file_location + '/' + str(format(file_number, '04d')) + ' ' + str(cutoff_time) + '.txt'
 
 while True:
     try:
@@ -70,7 +72,8 @@ while True:
         # of the old file, update the filename and reconnect to the API.
         if e.message == 'Time for new file':
             cutoff_time = datetime.now() + timedelta(minutes = 1)
-            file_name = file_location + str(cutoff_time) + '.txt'
+            file_number += 1
+            file_name = file_location + str(format(file_number, '04d')) + ' ' + str(cutoff_time) + '.txt'
             print '\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nNext file!' + file_name
         else:
             print "Error"

@@ -71,7 +71,7 @@ def file_collector(path):
     Returns list of files that still need to be hydrated."""
     with open(path + '/hydrated_tweets_log_2_hrs.txt', 'r') as c:
         hydrated = c.readlines()
-        files = [x for x in listdir(path) if (x + '\n') not in hydrated]
+        files = [x for x in sorted(listdir(path)) if (x + '\n') not in hydrated]
     return files
 
 def logger(path, filename):
@@ -106,8 +106,15 @@ with open(path + '/hydrated_tweets_log_2_hrs.txt', 'w') as create_log:
 with open(path + '/hydrated_tweets_log_72_hrs.txt', 'w') as create_log:
     pass
 
-for x in [1]:
-# while True:
+delay = 2 #seconds
+cutoff_time = datetime.now() + timedelta(minutes = 1)
+
+while True:
+
+    # Here, you want to add a timer start. This will ensure that this entire
+    # cycle takes exactly 2 hours. This way you can remove all the waiting 
+    # down below that isn't related to backing off the API.
+
     try:
         # Get list of tweet files that still need to be hydrated:
         files_list = file_collector(path)
@@ -119,46 +126,57 @@ for x in [1]:
         files_list.remove('hydrated_tweets_log_72_hrs.txt')
         if '.DS_Store' in files_list:
             files_list.remove('.DS_Store')
-        
-        
-    except:
-        print 'problem'
-
+        print files_list
         # Check to see if there is more than one tweets file that isn't already 
         # in the log. If there is not, then wait a few minutes. This ensures that only 
         # completed tweets files get hydrated.
-        if len(files_list) < 3:
+        if len(files_list) < 2:
             time.sleep(1800)
             print 'Sleeping to wait for new files'
 
-        # If there are enough files in files list, loop through them and hydrated
-        # their tweets:
-        for new_file in files_list[1:]:
-            print new_file
-            # Take the first file in the list and convert its tweet ids to strings.
-            filename = path + new_file
-            stringy_tweets = tweets_to_list_converter(filename)
-            # Hydrate 100 tweets at a time with those ids:
-            begin = 0
-            for x in range(len(stringy_tweets)/100 + 1):
-                print 'step %d of file %s' % (x, new_file)
-                end = begin + 100
-                try:
-                    hydrated_tweets = api_request(stringy_tweets[begin:end])
-                    new_filename = path + '/01_hydrated_tweets_2_hrs/hydrated' + str(x) + ' ' + new_file
-                    with open(new_filename, 'w') as a:
-                        for element in hydrated_tweets.iteritems():
-                            a.write(str(element) + "\n")
-                    begin += 100
-                except:
-                    logging.exception(Exception)
-                    time.sleep(1800)
-                    continue
 
-            # Add the current file to the log:
-            logger(path, new_file)
+        # ***Hydrate first file in files_list!
+        # Convert the file's tweet ids to strings.
+        new_file = files_list[0]
+        filename = path + '/' + new_file
+        stringy_tweets = tweets_to_list_converter(filename)
+
+        # Hydrate 100 tweets at a time with those ids:
+        begin = 0
+        for x in range(len(stringy_tweets)/100 + 1):
+            print 'step %d of file %s' % (x, new_file)
+            end = begin + 100
+            try:
+                hydrated_tweets = api_request(stringy_tweets[begin:end])
+                new_filename = path + '/01_hydrated_tweets_2_hrs/hydrated_2_hrs' + str(x) + ' ' + new_file
+                with open(new_filename, 'w') as a:
+                    for element in hydrated_tweets.iteritems():
+                        a.write(str(element) + "\n")
+                begin += 100
+            except:
+                logging.exception(Exception)
+                time.sleep(delay)
+                delay *= 2
+                continue
+
+        # Add the current file to the log:
+        logger(path, new_file)
+
+        delay = 2
 
     except:
         logging.exception(Exception)
-        time.sleep(1800)
+        time.sleep(delay)
+        delay *= 2
         continue
+
+    finally:
+        if datetime.now() >= cutoff_time:
+            cutoff_time = datetime.now() + timedelta(minutes = 1)
+            continue
+        else:
+            t_diff = cutoff_time - datetime.now()
+            time_to_cutoff = (t_diff.days * 1440 + t_diff.seconds / 60.0)*60
+            time.sleep(time_to_cutoff)
+
+
