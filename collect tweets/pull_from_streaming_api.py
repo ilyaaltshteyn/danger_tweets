@@ -7,12 +7,13 @@ import signal
 
 # Setup file logging and make sure you're in the script's own directory:
 import logging, os
-current_dir = os.path.dirname(os.path.realpath(__file__))
+# current_dir = os.path.dirname(os.path.realpath(__file__))
+current_dir = '/Users/ilya/Projects/danger_tweets/collect tweets'
 os.chdir(current_dir)
 logging.basicConfig(filename='debug_pull_from_streaming_api.log', level=logging.DEBUG)  
 
 # Set script to terminate in x seconds:
-signal.alarm(21600)
+signal.alarm(183)
 
 # ***----SETUP API DETAILS ---- ***
 
@@ -30,14 +31,14 @@ access_token_secret = api_details[3]
 
 #***---- CALL API AND RECORD TWEETS! --- ****
 
-file_location = str(current_dir) + '/collected_original_tweets/'
+file_location = str(current_dir) + '/collected_original_tweets'
 
 delay = 8 # seconds
 
 # Cutoff time is the time at which the current file should be completed and 
 # the next file should begin. Set filename based on cutoff time.
 cutoff_time = datetime.now() + timedelta(minutes = 30)
-file_name = file_location + str(cutoff_time) + '.txt'
+file_name = file_location + '/' + str(cutoff_time) + '.txt'
 
 while True:
     try:
@@ -68,7 +69,7 @@ while True:
         # If you ended up here because an hour has passed since the beginning
         # of the old file, update the filename and reconnect to the API.
         if e.message == 'Time for new file':
-            cutoff_time = datetime.now() + timedelta(minutes = 30)
+            cutoff_time = datetime.now() + timedelta(minutes = 1)
             file_name = file_location + str(cutoff_time) + '.txt'
             print '\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nNext file!' + file_name
         else:
