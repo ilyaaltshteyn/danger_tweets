@@ -44,10 +44,17 @@ file_name = file_location + '/' + str(format(file_number, '04d')) + ' ' + str(cu
 
 while True:
     try:
+        # Check to make sure that the cutoff time hasn't happened yet. If it
+        # has, raise exception that will make script write to a new filename.
+        if datetime.now() > cutoff_time:
+            raise Exception('Time for new file')
+
         api = TwitterAPI(consumer_key, consumer_secret,
                          access_token_key, access_token_secret)
         r = api.request('statuses/sample', {'country':'United States',
             'language' : 'en'})
+
+
         with open(file_name, "a") as output:
             for item in r.get_iterator():
 
@@ -73,7 +80,7 @@ while True:
         if e.message == 'Time for new file':
             cutoff_time = datetime.now() + timedelta(minutes = 1)
             file_number += 1
-            file_name = file_location + str(format(file_number, '04d')) + ' ' + str(cutoff_time) + '.txt'
+            file_name = file_location + '/' + str(format(file_number, '04d')) + ' ' + str(cutoff_time) + '.txt'
             print '\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nNext file!' + file_name
         else:
             print "Error"
