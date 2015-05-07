@@ -1,4 +1,4 @@
-# This script pulls retweets for each tweet 2 hours after it is tweeted, and then again 24 hours after it is tweeted.
+# This script pulls retweets for each tweet 72 hours after it is tweeted, and then again 24 hours after it is tweeted.
 
 import oauth2, time, urllib2, json, logging, signal
 from config import *
@@ -15,7 +15,7 @@ import logging, os
 # current_dir = os.path.dirname(os.path.realpath(__file__))
 current_dir = '/Users/ilya/Projects/danger_tweets/collect tweets'
 os.chdir(current_dir)
-logging.basicConfig(filename='debug_01_hydrate_2_hrs.log', level=logging.DEBUG)  
+logging.basicConfig(filename='debug_02_hydrate_72_hrs.log', level=logging.DEBUG)  
 path = str(current_dir)
 
 # Define cycle_length, which is the seconds that a single raw tweets file spans
@@ -23,14 +23,9 @@ cycle_length = 3600
 
 # Make it so the script dies after a certain amount of time, and sleeps before
 # starting so it's properly synced with pull_from_streaming_api.py
-signal.alarm(79300)
-time.sleep(cycle_length*2)
+signal.alarm(115203)
+time.sleep(43200)
 
-# Create the log for both hydration times:
-with open(path + '/hydrated_tweets_log_2_hrs.txt', 'w') as create_log:
-    pass
-with open(path + '/hydrated_tweets_log_72_hrs.txt', 'w') as create_log:
-    pass
 ### ---- SETUP API REQUEST FUNCTION
 
 #Get api details:
@@ -93,29 +88,25 @@ def tweets_to_list_converter(file):
     return tweets_list
 
 
+# Get list of tweet files to hydrate:
+files_list = sorted(listdir(path))
+print files_list
+# Remove some files from the list that are not data files:
+
+files_list.remove('01_hydrated_tweets_2_hrs')
+files_list.remove('02_hydrated_tweets_72_hrs')
+if 'hydrated_tweets_log_2_hrs.txt' in files_list:
+    files_list.remove('hydrated_tweets_log_2_hrs.txt')
+if 'hydrated_tweets_log_72_hrs.txt' in files_list:
+    files_list.remove('hydrated_tweets_log_72_hrs.txt')
+if '.DS_Store' in files_list:
+    files_list.remove('.DS_Store')
+print files_list
 
 delay = 2 #seconds
 
-for x in range(100):
+for file in files_list:
     cutoff_time = datetime.now() + timedelta(seconds = cycle_length)
-
-    # Get list of tweet files to hydrate:
-    files_list = sorted(listdir(path))
-    print files_list
-    # Remove some files from the list that are not data files:
-
-    files_list.remove('01_hydrated_tweets_2_hrs')
-    files_list.remove('02_hydrated_tweets_72_hrs')
-    if 'hydrated_tweets_log_2_hrs.txt' in files_list:
-        files_list.remove('hydrated_tweets_log_2_hrs.txt')
-    if 'hydrated_tweets_log_72_hrs.txt' in files_list:
-        files_list.remove('hydrated_tweets_log_72_hrs.txt')
-    if '.DS_Store' in files_list:
-        files_list.remove('.DS_Store')
-    print files_list
-
-    file = files_list[x]
-
     try:
         # ***Hydrate file!
         # Convert the file's tweet ids to strings.
@@ -131,7 +122,7 @@ for x in range(100):
             end = begin + 100
             try:
                 hydrated_tweets = api_request(stringy_tweets[begin:end])
-                new_filename = path + '/01_hydrated_tweets_2_hrs/hydrated_2_hrs' + str(x) + ' ' + str(datetime.now()) + new_file
+                new_filename = path + '/02_hydrated_tweets_72_hrs/hydrated_72_hrs' + str(x) + ' ' + str(datetime.now()) + new_file
                 with open(new_filename, 'w') as a:
                     for element in hydrated_tweets.iteritems():
                         a.write(str(element) + "\n")

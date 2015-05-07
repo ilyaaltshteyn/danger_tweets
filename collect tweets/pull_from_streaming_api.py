@@ -12,8 +12,11 @@ current_dir = '/Users/ilya/Projects/danger_tweets/collect tweets'
 os.chdir(current_dir)
 logging.basicConfig(filename='debug_pull_from_streaming_api.log', level=logging.DEBUG)  
 
+# Define cycle_length, which is the seconds that a single raw tweets file spans
+cycle_length = 3600
+
 # Set script to terminate in x seconds:
-signal.alarm(180)
+signal.alarm(72001)
 
 # ***----SETUP API DETAILS ---- ***
 
@@ -38,7 +41,7 @@ delay = 8 # seconds
 # Cutoff time is the time at which the current file should be completed and 
 # the next file should begin. Set filename based on cutoff time. Make sure
 # that filename starts with a 4-digit number.
-cutoff_time = datetime.now() + timedelta(minutes = 1)
+cutoff_time = datetime.now() + timedelta(seconds = cycle_length)
 file_number = 1
 file_name = file_location + '/' + str(format(file_number, '04d')) + ' ' + str(cutoff_time) + '.txt'
 
@@ -78,7 +81,7 @@ while True:
         # If you ended up here because an hour has passed since the beginning
         # of the old file, update the filename and reconnect to the API.
         if e.message == 'Time for new file':
-            cutoff_time = datetime.now() + timedelta(minutes = 1)
+            cutoff_time = datetime.now() + timedelta(seconds = cycle_length)
             file_number += 1
             file_name = file_location + '/' + str(format(file_number, '04d')) + ' ' + str(cutoff_time) + '.txt'
             print '\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nNext file!' + file_name
