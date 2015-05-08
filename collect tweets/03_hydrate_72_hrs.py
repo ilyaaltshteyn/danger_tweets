@@ -103,9 +103,9 @@ if '.DS_Store' in files_list:
     files_list.remove('.DS_Store')
 print files_list
 
-delay = 2 #seconds
 
 for file in files_list:
+    delay = 2 #seconds
     cutoff_time = datetime.now() + timedelta(seconds = cycle_length)
     try:
         # ***Hydrate file!

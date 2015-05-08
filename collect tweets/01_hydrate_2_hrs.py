@@ -94,9 +94,10 @@ def tweets_to_list_converter(file):
 
 
 
-delay = 2 #seconds
 
 for x in range(100):
+    delay = 2 #seconds
+    
     cutoff_time = datetime.now() + timedelta(seconds = cycle_length)
 
     # Get list of tweet files to hydrate:
