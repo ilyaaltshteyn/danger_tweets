@@ -12,8 +12,8 @@ from os import listdir
 
 # Setup file logging and make sure you're in the script's own directory:
 import logging, os
-# current_dir = os.path.dirname(os.path.realpath(__file__))
-current_dir = '/Users/ilya/Projects/danger_tweets/collect tweets'
+current_dir = os.path.dirname(os.path.realpath(__file__))
+# current_dir = '/Users/ilya/Projects/danger_tweets/collect tweets'
 os.chdir(current_dir)
 logging.basicConfig(filename='debug_02_hydrate_72_hrs.log', level=logging.DEBUG)  
 path = str(current_dir)
@@ -105,7 +105,7 @@ print files_list
 
 
 for file in files_list:
-    delay = 2 #seconds
+    delay = 300 #seconds
     cutoff_time = datetime.now() + timedelta(seconds = cycle_length)
     try:
         # ***Hydrate file!
@@ -120,6 +120,8 @@ for file in files_list:
         for x in range(len(stringy_tweets)/100 + 1):
             print 'step %d of file %s' % (x, new_file)
             end = begin + 100
+            if datetime.now() >= cutoff_time:
+                break            
             try:
                 hydrated_tweets = api_request(stringy_tweets[begin:end])
                 new_filename = path + '/02_hydrated_tweets_72_hrs/hydrated_72_hrs' + str(x) + ' ' + str(datetime.now()) + new_file
@@ -127,8 +129,11 @@ for file in files_list:
                     for element in hydrated_tweets.iteritems():
                         a.write(str(element) + "\n")
                 begin += 100
-            except:
+            except Exception as e:
                 print 'EXCEPTION 1'
+                print e.message()
+                if datetime.now() >= cutoff_time:
+                    break
                 logging.exception(Exception)
                 time.sleep(delay)
                 delay *= 2

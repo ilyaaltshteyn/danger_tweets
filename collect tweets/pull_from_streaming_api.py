@@ -7,8 +7,8 @@ import signal
 
 # Setup file logging and make sure you're in the script's own directory:
 import logging, os
-# current_dir = os.path.dirname(os.path.realpath(__file__))
-current_dir = '/Users/ilya/Projects/danger_tweets/collect tweets'
+current_dir = os.path.dirname(os.path.realpath(__file__))
+# current_dir = '/Users/ilya/Projects/danger_tweets/collect tweets'
 os.chdir(current_dir)
 logging.basicConfig(filename='debug_pull_from_streaming_api.log', level=logging.DEBUG)  
 

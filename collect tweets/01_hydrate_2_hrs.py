@@ -12,8 +12,8 @@ from os import listdir
 
 # Setup file logging and make sure you're in the script's own directory:
 import logging, os
-# current_dir = os.path.dirname(os.path.realpath(__file__))
-current_dir = '/Users/ilya/Projects/danger_tweets/collect tweets'
+current_dir = os.path.dirname(os.path.realpath(__file__))
+# current_dir = '/Users/ilya/Projects/danger_tweets/collect tweets'
 os.chdir(current_dir)
 logging.basicConfig(filename='debug_01_hydrate_2_hrs.log', level=logging.DEBUG)  
 path = str(current_dir)
@@ -95,8 +95,8 @@ def tweets_to_list_converter(file):
 
 
 
-for x in range(100):
-    delay = 2 #seconds
+for x in range(1000):
+    delay = 300 #seconds
     
     cutoff_time = datetime.now() + timedelta(seconds = cycle_length)
 
@@ -115,8 +115,20 @@ for x in range(100):
         files_list.remove('.DS_Store')
     print files_list
 
-    file = files_list[x]
-
+    # Try to make file = file[x]. If that doesn't work, then sleep. If you're
+    # out of time, then make file = some nonsense so that everything breaks and
+    # the script goes to the next value of x.
+    while True:
+        try:
+            file = files_list[x]
+            break
+        except:
+            print 'there is no file[x]!'
+            if datetime.now() >= cutoff_time:
+                file = 'THIS FILE DOESNT EXIST'
+                break
+            else:
+                time.sleep(30)
     try:
         # ***Hydrate file!
         # Convert the file's tweet ids to strings.
@@ -130,6 +142,8 @@ for x in range(100):
         for x in range(len(stringy_tweets)/100 + 1):
             print 'step %d of file %s' % (x, new_file)
             end = begin + 100
+            if datetime.now() >= cutoff_time:
+                break
             try:
                 hydrated_tweets = api_request(stringy_tweets[begin:end])
                 new_filename = path + '/01_hydrated_tweets_2_hrs/hydrated_2_hrs' + str(x) + ' ' + str(datetime.now()) + new_file
@@ -137,8 +151,11 @@ for x in range(100):
                     for element in hydrated_tweets.iteritems():
                         a.write(str(element) + "\n")
                 begin += 100
-            except:
+            except Exception as e:
                 print 'EXCEPTION 1'
+                print e.message()
+                if datetime.now() >= cutoff_time:
+                    break
                 logging.exception(Exception)
                 time.sleep(delay)
                 delay *= 2
