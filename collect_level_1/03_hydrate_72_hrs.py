@@ -1,6 +1,6 @@
 # This script pulls retweets for each tweet 72 hours after it is tweeted, and then again 24 hours after it is tweeted.
 
-import oauth2, time, urllib2, json, logging, signal
+import oauth2, time, urllib2, json, logging, signal, os
 from config import *
 from TwitterAPI import TwitterAPI
 import time
@@ -15,11 +15,11 @@ import sys
 sys.stdout = open('script_output.txt', 'w')
 
 # Setup file logging and make sure you're in the script's own directory:
-import logging, os
+# import logging, os
 current_dir = str(os.path.dirname(os.path.realpath(__file__))) + '/collect_level_2/collect tweets'
 # current_dir = '/Users/ilya/Projects/danger_tweets/collect tweets'
 os.chdir(current_dir)
-logging.basicConfig(filename='debug_02_hydrate_72_hrs.log', level=logging.DEBUG)  
+# logging.basicConfig(filename='debug_02_hydrate_72_hrs.log', level=logging.DEBUG)  
 path = str(current_dir)
 
 # Define cycle_length, which is the seconds that a single raw tweets file spans
@@ -87,7 +87,7 @@ def tweets_to_list_converter(file):
                 one_tweet_id = ast.literal_eval(line[:-1])['id']
                 tweets_list.append(str(one_tweet_id))
             except:
-                logging.exception(Exception)
+                print "Couldn't convert tweets to list with tweets_to_list_converter"
                 continue
     return tweets_list
 
@@ -109,7 +109,7 @@ print files_list
 
 
 for file in files_list:
-    delay = 300 #seconds
+    delay = 30 #seconds
     cutoff_time = datetime.now() + timedelta(seconds = cycle_length)
     try:
         # ***Hydrate file!
@@ -121,27 +121,28 @@ for file in files_list:
 
         # Hydrate 100 tweets at a time with those ids:
         begin = 0
-        for x in range(len(stringy_tweets)/100 + 1):
+        for x in range(len(stringy_tweets)/99 + 1):
             print 'step %d of file %s' % (x, new_file)
-            end = begin + 100
+            end = begin + 99
             if datetime.now() >= cutoff_time:
-                break            
-            try:
-                hydrated_tweets = api_request(stringy_tweets[begin:end])
-                new_filename = path + '/02_hydrated_tweets_72_hrs/hydrated_72_hrs' + str(x) + ' ' + str(datetime.now()) + new_file
-                with open(new_filename, 'w') as a:
-                    for element in hydrated_tweets.iteritems():
-                        a.write(str(element) + "\n")
-                begin += 100
-            except Exception as e:
-                print 'EXCEPTION 1'
-                print e.message()
-                if datetime.now() >= cutoff_time:
+                break
+            while True:
+                try:
+                    hydrated_tweets = api_request(stringy_tweets[begin:end])
+                    new_filename = path + '/02_hydrated_tweets_72_hrs/hydrated_72_hrs' + str(x) + ' ' + str(datetime.now()) + new_file
+                    with open(new_filename, 'w') as a:
+                        for element in hydrated_tweets.iteritems():
+                            a.write(str(element) + "\n")
+                    begin += 99
                     break
-                logging.exception(Exception)
-                time.sleep(delay)
-                delay *= 2
-                continue
+                except Exception, e:
+                    print 'EXCEPTION 1'
+                    print e
+                    if datetime.now() >= cutoff_time:
+                        break
+                    # logging.exception(Exception)
+                    time.sleep(delay)
+                    delay *= 2
     except:
         print 'EXCEPTION 2'
         continue
