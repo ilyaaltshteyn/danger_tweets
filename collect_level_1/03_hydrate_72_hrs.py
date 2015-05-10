@@ -45,21 +45,22 @@ consumer_secret = api_details[1]
 access_token_key = api_details[2]
 access_token_secret = api_details[3]
 
-#Create api searcher:
-url1 = 'https://api.twitter.com/1.1/statuses/lookup.json'
-params = {
-    "oauth_version": "1.0",
-    "oauth_nonce": oauth2.generate_nonce(),
-    "oauth_timestamp": int(time.time())
-}
-consumer = oauth2.Consumer(key=consumer_key, secret=consumer_secret)
-token = oauth2.Token(key=access_token_key, secret=access_token_secret)
-params["oauth_consumer_key"] = consumer.key
-params["oauth_token"] = token.key
 
 def api_request(list_of_tweets):
     """Takes a list of up to 100 tweet ids and returns tweet details, including
     retweet count. Tweets in original list must be strings."""
+    #Create api searcher:
+    url1 = 'https://api.twitter.com/1.1/statuses/lookup.json'
+    params = {
+        "oauth_version": "1.0",
+        "oauth_nonce": oauth2.generate_nonce(),
+        "oauth_timestamp": int(time.time())
+    }
+    consumer = oauth2.Consumer(key=consumer_key, secret=consumer_secret)
+    token = oauth2.Token(key=access_token_key, secret=access_token_secret)
+    params["oauth_consumer_key"] = consumer.key
+    params["oauth_token"] = token.key
+    
     tweets_as_strings = ','.join(list_of_tweets)
     url = url1
     params['id'] = tweets_as_strings
@@ -109,6 +110,7 @@ print files_list
 
 
 for file in files_list:
+    print "The file we're on is %r" % file
     delay = 30 #seconds
     cutoff_time = datetime.now() + timedelta(seconds = cycle_length)
     try:
