@@ -1,6 +1,6 @@
-# This script pulls retweets for each tweet 2 hours after it is tweeted, and then again 24 hours after it is tweeted.
+# This script pulls retweets for each tweet 2 hours after it is tweeted
 
-import oauth2, time, urllib2, json, logging, signal, os
+import oauth2, time, urllib2, json, signal, os
 from config import *
 from TwitterAPI import TwitterAPI
 import time
@@ -14,12 +14,9 @@ urllib3.contrib.pyopenssl.inject_into_urllib3()
 import sys
 sys.stdout = open('script_output.txt', 'w')
 
-# Setup file logging and make sure you're in the script's own directory:
-# import logging, os
+# Make sure you're in the script's own directory:
 current_dir = str(os.path.dirname(os.path.realpath(__file__))) + '/collect tweets'
-# current_dir = '/Users/ilya/Projects/danger_tweets/collect tweets'
 os.chdir(current_dir)
-# logging.basicConfig(filename='debug_01_hydrate_2_hrs.log', level=logging.DEBUG)  
 path = str(current_dir)
 
 # Define cycle_length, which is the seconds that a single raw tweets file spans
@@ -27,14 +24,9 @@ cycle_length = 900
 
 # Make it so the script dies after a certain amount of time, and sleeps before
 # starting so it's properly synced with pull_from_streaming_api.py
-signal.alarm(79300)
+signal.alarm(259200 + (10*cycle_length))
 time.sleep(cycle_length*8)
 
-# Create the log for both hydration times:
-with open(path + '/hydrated_tweets_log_2_hrs.txt', 'w') as create_log:
-    pass
-with open(path + '/hydrated_tweets_log_72_hrs.txt', 'w') as create_log:
-    pass
 ### ---- SETUP API REQUEST FUNCTION
 
 #Get api details:
@@ -94,7 +86,6 @@ def tweets_to_list_converter(file):
                 tweets_list.append(str(one_tweet_id))
             except:
                 print "Couldn't convert tweets to list with tweets_to_list_converter"
-                # logging.exception(Exception)
                 continue
     return tweets_list
 
@@ -154,7 +145,7 @@ for x in range(1000):
             while True:
                 try:
                     hydrated_tweets = api_request(stringy_tweets[begin:end])
-                    new_filename = path + '/01_hydrated_tweets_2_hrs/hydrated_2_hrs' + str(row) + ' ' + str(datetime.now()) + new_file
+                    new_filename = path + '/01_hydrated_tweets_2_hrs/hydrated_2_hrs ' + str(row) + ' ' + str(datetime.now()) + ' ' + new_file
                     with open(new_filename, 'w') as a:
                         for element in hydrated_tweets.iteritems():
                             a.write(str(element) + "\n")
@@ -165,7 +156,6 @@ for x in range(1000):
                     print e
                     if datetime.now() >= cutoff_time:
                         break
-                    # logging.exception(Exception)
                     time.sleep(delay)
                     delay *= 2
     except:

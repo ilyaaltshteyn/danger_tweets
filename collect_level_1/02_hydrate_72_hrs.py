@@ -1,6 +1,6 @@
-# This script pulls retweets for each tweet 2 hours after it is tweeted, and then again 24 hours after it is tweeted.
+# This script pulls retweets for each tweet 72 hours after it is tweeted
 
-import oauth2, time, urllib2, json, logging, signal
+import oauth2, time, urllib2, json, signal, os
 from config import *
 from TwitterAPI import TwitterAPI
 import time
@@ -9,28 +9,24 @@ import numpy as np
 import signal
 import ast
 from os import listdir
+import urllib3.contrib.pyopenssl
+urllib3.contrib.pyopenssl.inject_into_urllib3()
+import sys
+sys.stdout = open('script_output.txt', 'w')
 
-# Setup file logging and make sure you're in the script's own directory:
-import logging, os
-current_dir = os.path.dirname(os.path.realpath(__file__))
-# current_dir = '/Users/ilya/Projects/danger_tweets/collect tweets'
+# Make sure you're in the script's own directory:
+current_dir = str(os.path.dirname(os.path.realpath(__file__))) + '/collect_level_2/collect tweets'
 os.chdir(current_dir)
-logging.basicConfig(filename='debug_01_hydrate_2_hrs.log', level=logging.DEBUG)  
 path = str(current_dir)
 
 # Define cycle_length, which is the seconds that a single raw tweets file spans
-cycle_length = 3600
+cycle_length = 900
 
 # Make it so the script dies after a certain amount of time, and sleeps before
 # starting so it's properly synced with pull_from_streaming_api.py
-signal.alarm(79300)
-time.sleep(cycle_length*2)
+signal.alarm(259200*2)
+time.sleep(cycle_length*4*72)
 
-# Create the log for both hydration times:
-with open(path + '/hydrated_tweets_log_2_hrs.txt', 'w') as create_log:
-    pass
-with open(path + '/hydrated_tweets_log_72_hrs.txt', 'w') as create_log:
-    pass
 ### ---- SETUP API REQUEST FUNCTION
 
 #Get api details:
@@ -46,21 +42,22 @@ consumer_secret = api_details[1]
 access_token_key = api_details[2]
 access_token_secret = api_details[3]
 
-#Create api searcher:
-url1 = 'https://api.twitter.com/1.1/statuses/lookup.json'
-params = {
-    "oauth_version": "1.0",
-    "oauth_nonce": oauth2.generate_nonce(),
-    "oauth_timestamp": int(time.time())
-}
-consumer = oauth2.Consumer(key=consumer_key, secret=consumer_secret)
-token = oauth2.Token(key=access_token_key, secret=access_token_secret)
-params["oauth_consumer_key"] = consumer.key
-params["oauth_token"] = token.key
 
 def api_request(list_of_tweets):
     """Takes a list of up to 100 tweet ids and returns tweet details, including
     retweet count. Tweets in original list must be strings."""
+    #Create api searcher:
+    url1 = 'https://api.twitter.com/1.1/statuses/lookup.json'
+    params = {
+        "oauth_version": "1.0",
+        "oauth_nonce": oauth2.generate_nonce(),
+        "oauth_timestamp": int(time.time())
+    }
+    consumer = oauth2.Consumer(key=consumer_key, secret=consumer_secret)
+    token = oauth2.Token(key=access_token_key, secret=access_token_secret)
+    params["oauth_consumer_key"] = consumer.key
+    params["oauth_token"] = token.key
+    
     tweets_as_strings = ','.join(list_of_tweets)
     url = url1
     params['id'] = tweets_as_strings
@@ -88,7 +85,7 @@ def tweets_to_list_converter(file):
                 one_tweet_id = ast.literal_eval(line[:-1])['id']
                 tweets_list.append(str(one_tweet_id))
             except:
-                logging.exception(Exception)
+                print "Couldn't convert tweets to list with tweets_to_list_converter"
                 continue
     return tweets_list
 
@@ -96,7 +93,8 @@ def tweets_to_list_converter(file):
 
 
 for x in range(1000):
-    delay = 300 #seconds
+    print "x is equal to %d" % x
+    delay = 30 #seconds
     
     cutoff_time = datetime.now() + timedelta(seconds = cycle_length)
 
@@ -128,7 +126,7 @@ for x in range(1000):
                 file = 'THIS FILE DOESNT EXIST'
                 break
             else:
-                time.sleep(30)
+                time.sleep(3)
     try:
         # ***Hydrate file!
         # Convert the file's tweet ids to strings.
@@ -139,27 +137,27 @@ for x in range(1000):
 
         # Hydrate 100 tweets at a time with those ids:
         begin = 0
-        for x in range(len(stringy_tweets)/100 + 1):
-            print 'step %d of file %s' % (x, new_file)
-            end = begin + 100
+        for row in range(len(stringy_tweets)/99 + 1):
+            print 'step %d of file %s' % (row, new_file)
+            end = begin + 99
             if datetime.now() >= cutoff_time:
                 break
-            try:
-                hydrated_tweets = api_request(stringy_tweets[begin:end])
-                new_filename = path + '/01_hydrated_tweets_2_hrs/hydrated_2_hrs' + str(x) + ' ' + str(datetime.now()) + new_file
-                with open(new_filename, 'w') as a:
-                    for element in hydrated_tweets.iteritems():
-                        a.write(str(element) + "\n")
-                begin += 100
-            except Exception as e:
-                print 'EXCEPTION 1'
-                print e.message()
-                if datetime.now() >= cutoff_time:
+            while True:
+                try:
+                    hydrated_tweets = api_request(stringy_tweets[begin:end])
+                    new_filename = path + '/02_hydrated_tweets_72_hrs/hydrated_72_hrs ' + str(row) + ' ' + str(datetime.now()) + ' ' + new_file
+                    with open(new_filename, 'w') as a:
+                        for element in hydrated_tweets.iteritems():
+                            a.write(str(element) + "\n")
+                    begin += 99
                     break
-                logging.exception(Exception)
-                time.sleep(delay)
-                delay *= 2
-                continue
+                except Exception, e:
+                    print 'EXCEPTION 1'
+                    print e
+                    if datetime.now() >= cutoff_time:
+                        break
+                    time.sleep(delay)
+                    delay *= 2
     except:
         print 'EXCEPTION 2'
         continue

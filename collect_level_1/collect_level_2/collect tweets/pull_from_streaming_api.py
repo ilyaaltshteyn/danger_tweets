@@ -6,21 +6,19 @@ import numpy as np
 import signal
 import urllib3.contrib.pyopenssl
 urllib3.contrib.pyopenssl.inject_into_urllib3()
+import os
 import sys
 sys.stdout = open('script_output.txt', 'w')
 
-# Setup file logging and make sure you're in the script's own directory:
-import logging, os
+# Make sure you're in the script's own directory:
 current_dir = os.path.dirname(os.path.realpath(__file__))
-# current_dir = '/Users/ilya/Projects/danger_tweets/collect tweets'
 os.chdir(current_dir)
-logging.basicConfig(filename='debug_pull_from_streaming_api.log', level=logging.DEBUG)  
 
 # Define cycle_length, which is the seconds that a single raw tweets file spans
 cycle_length = 900
 
 # Set script to terminate in x seconds:
-signal.alarm(72001)
+signal.alarm(cycle_length*4*72)
 
 # ***----SETUP API DETAILS ---- ***
 
@@ -80,8 +78,8 @@ while True:
                     output.write(str(item) + "\n")
                 delay = max(8, delay/2)
 
-    except Exception as e:
-        logging.exception(e)
+    except Exception, e:
+        print e
         # If you ended up here because an hour has passed since the beginning
         # of the old file, update the filename and reconnect to the API.
         if e.message == 'Time for new file':
