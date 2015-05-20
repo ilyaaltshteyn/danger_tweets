@@ -7,9 +7,7 @@ import os
 import ast
 from pymongo import MongoClient
 
-dir = "/Users/ilya/Projects/danger_tweets/collected_on_remote_machine/may_18th/collected_original_tweets/01_hydrated_tweets_2_hrs/"
-files = os.listdir(dir)
-name = "hydrated_2_hrs 1 2015-05-14 05:05:53.098370 0287 2015-05-14 03:29:27.141734.txt"
+#           ***FUNCTIONS TO PULL DATA OUT OF RAW DATAFILES***
 
 metainfo = ['hydration_point', 'hydration_filenum', 'hydration_date', 'hydration_time',
             'unhydrated_file_num', 'origin_date', 'origin_time']
@@ -49,9 +47,34 @@ def file_to_tweets(dirname,filename):
     return completed_data_rows
 
 
-filename = dir + file
-print filename
-some = file_to_tweets(dir, file)
+#                      ***THROW TWEETS INTO MONGO DB***
 
+dir = "/Users/ilya/Projects/danger_tweets/collected_on_remote_machine/may_18th/collected_original_tweets/01_hydrated_tweets_2_hrs/"
+name = "hydrated_2_hrs 1 2015-05-14 05:05:53.098370 0287 2015-05-14 03:29:27.141734.txt"
+
+# Set up mongo connection:
+client = MongoClient()
+db = client.tweets
+
+def directory_to_mongo(directory, collection):
+    """Runs file_to_tweets on every file in the given directory and puts them
+    all into the given mongodb collection, in the tweets collection. Collection
+    should be either 1 (for the tweets hydrated at 2 hrs) or 2 (for the ones
+    hydrated at 72 hours)."""
+    # Specify collection to put data into:
+    if collection == 1:
+        collect = db.hydration1
+    if collection == 2:
+        collect = db.hydration2
+
+    files = os.listdir(directory)
+    for f in files[1:]:
+        print f
+        tweets = file_to_tweets(directory, f)
+        # Throw tweets into mongo collection:
+        for tweet in tweets:
+            collect.insert(tweet)
+
+directory_to_mongo(dir, 1)
 
 
