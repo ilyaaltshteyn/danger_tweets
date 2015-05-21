@@ -14,6 +14,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
 import ast
+import pickle
 
 #             ***Read in training data and strip non-ascii chars***
 dir =  "/Users/ilya/Projects/danger_tweets/train_model/"
@@ -60,18 +61,7 @@ big_test = [remove_non_ascii(x) for x in big_test]
 x_big_data = vectorizer.transform(big_test)
 x_big_data_tfidf = vectorizer2.transform(big_test)
 
-#                    ***Build some simple classifiers***
-
-# Naive bayes:
-nb = MultinomialNB(alpha = 1)
-nb.fit(X_train, y_train)
-nb_pred = nb.predict(x_big_data)
-
-big_tweets_df['nb_prediction'] = nb_pred
-nb_danger_guess = big_tweets_df[big_tweets_df.nb_prediction == '1']
-
-print len(nb_danger_guess)
-nb_danger_guess.to_csv(dir+"nb_predicted_danger6.csv")
+#             ***Build some simple classifiers and pickle them***
 
 # Naive bayes with Tfidf: with alpha = .3, gets 20/67 hits.
 
@@ -84,15 +74,36 @@ nb_danger_guess = big_tweets_df[big_tweets_df.nb_prediction == '1']
 
 print len(nb_danger_guess)
 print nb_danger_guess
-nb_danger_guess.to_csv(dir+"nb_predicted_danger6.csv")
+
+
+pickle_dump = {"Model" : nb, "Vectorizer": vectorizer2}
+pickle.dump(pickle_dump, open('nb1.p', 'w'))
+
+# Naive bayes with count vectorizer:
+nb = MultinomialNB(alpha = 1)
+nb.fit(X_train, y_train)
+nb_pred = nb.predict(x_big_data)
+
+big_tweets_df['nb_prediction'] = nb_pred
+nb_danger_guess = big_tweets_df[big_tweets_df.nb_prediction == '1']
+
+print len(nb_danger_guess)
+pickle_dump = {"Model" : nb, "Vectorizer": vectorizer}
+pickle.dump(pickle_dump, open('nb2.p', 'w'))
 
 
 
 # Random forest
 rf = RandomForestClassifier(verbose = 10, max_depth = 250, n_estimators = 100)
-rf.fit(X_train, y_train)
-rf_pred = rf.predict(x_big_data)
+rf.fit(X_train_tfidf, y_train)
+rf_pred = rf.predict(x_big_data_tfidf)
 
 big_tweets_df['rf_prediction'] = rf_pred
 rf_danger_guess = big_tweets_df[big_tweets_df.rf_prediction == '1']
+
+print len(rf_danger_guess)
+pickle_dump = {"Model" : rf, "Vectorizer": vectorizer2}
+pickle.dump(pickle_dump, open('rf1.p', 'w'))
+
+
 

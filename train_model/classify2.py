@@ -10,6 +10,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
 import ast
+import pickle
 
 #             ***Read in data and strip non-ascii chars***
 dir =  "/Users/ilya/Projects/danger_tweets/train_model/"
@@ -59,13 +60,23 @@ def naive_bayes():
 prec, rec, scor = naive_bayes()
 print "Precision is %r, recall is %r, accuracy is %r" % (prec, rec, scor)
 
+nb1 = MultinomialNB()
+nb1.fit(X_train, train_data.danger)
+model_dump = {"Model": nb1, "Vectorizer": vectorizer}
+pickle.dump(model_dump, open('nb1.p', 'w'))
+
 def rf(depth):
     rf = RandomForestClassifier(verbose = 10, max_depth = depth, n_estimators = 100)
     rf.fit(X_train, train_data.danger)
     rf_pred = rf.predict(X_test)
     rf_score = rf.score(X_test, y_test)
     precision, recall, _, _ = precision_recall_fscore_support(y_test, rf_pred)
-    return precision, recall, str(rf_score)
+    return rf, precision, recall, str(rf_score)
+
+rf1, prec, rec, rf_scor = rf(250)
+print prec, rec, rf_scor
+pickle_out = {"Model": rf1, "Vectorizer": vectorizer}
+pickle.dump(pickle_out, open('rf1.p', 'w'))
 
 # Try different values of max_depth for the random forest:
 

@@ -22,7 +22,10 @@ def file_to_tweets(dirname,filename):
     the file. It also uses name_to_metainfo to include the metainfo about the
     file that each tweet came from in each row. Returns all rows as dict."""
     f = dirname + filename
+    if filename == ".DS_Store":
+        return []
     with open(f, 'r') as f:
+        print f
         tweets_in_this_file = ast.literal_eval(f.readlines()[0])[1]
     tweet_ids = tweets_in_this_file.keys()
     completed_data_rows = []
@@ -40,7 +43,7 @@ def file_to_tweets(dirname,filename):
             continue
     return completed_data_rows
 
-dirname = "/Users/ilya/Projects/danger_tweets/collected_on_remote_machine/may_18th/collected_original_tweets/02_hydrated_tweets_72_hrs/"
+dirname = "/Users/ilya/Projects/danger_tweets/collected_on_remote_machine/may_21st/01_hydrated_tweets_2_hrs/"
 files = os.listdir(dirname)
 
 def dir_to_tweets(dirname):
@@ -57,8 +60,8 @@ allofem = dir_to_tweets(dirname)
 
 flat_tweets = [item for sublist in allofem for item in sublist]
 
-output_dir = "/Users/ilya/Projects/danger_tweets/collected_on_remote_machine/may_18th/cleaned_data/"
-with open(output_dir + '72_hr_tweets.txt', 'a') as output:
+output_dir = "/Users/ilya/Projects/danger_tweets/collected_on_remote_machine/may_21st/"
+with open(output_dir + '2_hr_tweets.txt', 'a') as output:
     for tweet in flat_tweets:
         output.write("%s\n" % str(tweet))
 

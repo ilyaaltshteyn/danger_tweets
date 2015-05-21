@@ -1,0 +1,8 @@
+Findings/notes
+
+Training data:
+2656 total tweets.
+828 about danger, 1828 not about danger.
+The minimum length of a danger tweet in my training set is 46 characters.
+The minimum length of any tweet in my training set is 14. Cutting all new tweets 
+shorter than 14 chars.

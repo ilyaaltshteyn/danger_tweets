@@ -12,13 +12,14 @@ sys.stdout = open('script_output.txt', 'w')
 
 # Make sure you're in the script's own directory:
 current_dir = os.path.dirname(os.path.realpath(__file__))
+# current_dir = os.getcwd()
 os.chdir(current_dir)
 
 # Define cycle_length, which is the seconds that a single raw tweets file spans
 cycle_length = 900
 
 # Set script to terminate in x seconds:
-signal.alarm(cycle_length*4*72)
+# signal.alarm(280)
 
 # ***----SETUP API DETAILS ---- ***
 
@@ -74,7 +75,7 @@ while True:
                 if 'retweeted_status' not in item and \
                     random_filter <= .05 and \
                     item['in_reply_to_user_id'] == None:
-                    print item['text']
+                    item = dict((k, item[k]) for k in ('text', 'id'))
                     output.write(str(item) + "\n")
                 delay = max(8, delay/2)
 

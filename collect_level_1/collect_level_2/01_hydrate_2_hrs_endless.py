@@ -1,4 +1,4 @@
-# This script pulls retweets for each tweet 72 hours after it is tweeted
+# This script pulls retweets for each tweet 2 hours after it is tweeted
 
 import oauth2, time, urllib2, json, signal, os
 from config import *
@@ -15,7 +15,7 @@ import sys
 sys.stdout = open('script_output.txt', 'w')
 
 # Make sure you're in the script's own directory:
-current_dir = str(os.path.dirname(os.path.realpath(__file__))) + '/collect_level_2/collect tweets'
+current_dir = str(os.path.dirname(os.path.realpath(__file__))) + '/collect tweets'
 os.chdir(current_dir)
 path = str(current_dir)
 
@@ -24,8 +24,8 @@ cycle_length = 900
 
 # Make it so the script dies after a certain amount of time, and sleeps before
 # starting so it's properly synced with pull_from_streaming_api.py
-signal.alarm(259200*2)
-time.sleep(cycle_length*4*72)
+# signal.alarm(280)
+time.sleep(cycle_length*9)
 
 ### ---- SETUP API REQUEST FUNCTION
 
@@ -92,7 +92,7 @@ def tweets_to_list_converter(file):
 
 
 
-for x in range(1000):
+for x in range(100000):
     print "x is equal to %d" % x
     delay = 30 #seconds
     
@@ -145,7 +145,7 @@ for x in range(1000):
             while True:
                 try:
                     hydrated_tweets = api_request(stringy_tweets[begin:end])
-                    new_filename = path + '/02_hydrated_tweets_72_hrs/hydrated_72_hrs ' + str(row) + ' ' + str(datetime.now()) + ' ' + new_file
+                    new_filename = path + '/01_hydrated_tweets_2_hrs/hydrated_2_hrs ' + str(row) + ' ' + str(datetime.now()) + ' ' + new_file
                     with open(new_filename, 'w') as a:
                         for element in hydrated_tweets.iteritems():
                             a.write(str(element) + "\n")
