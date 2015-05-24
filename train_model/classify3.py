@@ -94,7 +94,7 @@ pickle.dump(pickle_dump, open('nb2.p', 'w'))
 
 
 # Random forest
-rf = RandomForestClassifier(verbose = 10, max_depth = 250, n_estimators = 100)
+rf = RandomForestClassifier(verbose = 10, max_depth = 250, n_estimators = 20)
 rf.fit(X_train_tfidf, y_train)
 rf_pred = rf.predict(x_big_data_tfidf)
 

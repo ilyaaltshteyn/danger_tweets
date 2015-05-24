@@ -17,13 +17,9 @@ import pickle
 import os
 from pymongo import MongoClient
 
-# pickle_load = pickle.load(open('nb1.p', 'r'))
-# pickle_load2 = pickle.load(open('nb2.p', 'r'))
-# pickle_load3 = pickle.load(open('rf1.p', 'r'))
-
 #           *** DEFINE FUNCTIONS ***
 
-def find_files_to_add_to_database(log_file, tweets_dir = tweets_dir):
+def find_files_to_add_to_database(logfile_dir, log_file, tweets_dir):
     """Looks for files in the tweets_dir that have yet to be added to the mongo
     database. Returns list of files to add."""
 
@@ -36,11 +32,13 @@ def find_files_to_add_to_database(log_file, tweets_dir = tweets_dir):
     except:
         print "something happened"
 
-    for possible_tweet_file in all_tweet_files:
-        if possible_tweet_file in log_file:
-            pass
-        else:
-            files_to_add_to_mongo.append(possible_tweet_file)
+    with open(logfile_dir+log_file, 'r') as loggy:
+        log_file_tweets = loggy.readlines()
+        for possible_tweet_file in all_tweet_files:
+            if (str(possible_tweet_file) + '\n') in log_file_tweets:
+                pass
+            else:
+                files_to_add_to_mongo.append(possible_tweet_file)
     return files_to_add_to_mongo
 
 def name_to_metainfo(tweetfile_directory, tweetfile_name):
@@ -86,7 +84,7 @@ def file_to_tweets(log_file_directory, log_file_name, tweet_file_directory, twee
             continue
 
     with open(log_file_directory + log_file_name, 'a') as logfile:
-        logfile.write(tweet_file_name)
+        logfile.write(tweet_file_name + '\n')
 
     return tweets_with_metainfo
 
@@ -102,7 +100,8 @@ def tweets_to_mongo(list_of_tweets_as_dicts):
             print e
 
 def run_all(logfile_directory, logfile_name, tweet_files_directory):
-    files_to_add_to_mongo = find_files_to_add_to_database(logfile_directory, 
+    files_to_add_to_mongo = find_files_to_add_to_database(logfile_directory,
+                                                          logfile_name, 
                                                           tweet_files_directory)
     for file_to_add in files_to_add_to_mongo:
         try:
@@ -116,13 +115,15 @@ def run_all(logfile_directory, logfile_name, tweet_files_directory):
             print e
             continue
     print "FINISHED RUNNING ALL"
+    
+    os.system('say "your first program has finished"')
 
 
 client = MongoClient()
 db = client.tweets
-collect = db.test_hydration_insert #change this be the right collection!
+collect = db.test_collection #change this be the right collection!
 
-info = {'logfile_directory' : "/Users/ilya/Projects/danger_tweets/collected_on_remote_machine/may_18th/",
+info = {'logfile_directory' : "/Users/ilya/Projects/danger_tweets/train_model/",
         'logfile_name' : 'mongoed_tweets_log.txt',
         'tweet_files_directory': "/Users/ilya/Projects/danger_tweets/collected_on_remote_machine/may_21st/unhydrated_tweets/collected_original_tweets/"
         }
