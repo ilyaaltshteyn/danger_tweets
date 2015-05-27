@@ -6,3 +6,13 @@ Training data:
 The minimum length of a danger tweet in my training set is 46 characters.
 The minimum length of any tweet in my training set is 14. Cutting all new tweets 
 shorter than 14 chars.
+
+Danger tweets may come mostly from "official" accounts, so you need to compare
+them to other tweets coming from those same accounts. To do this, grab a random
+tweet from each account that sent out a danger tweet and use those as controls,
+instead of using random tweets as controls. This way you don't have to worry
+about spam, or about controlling for follower counts.
+
+I did a "manual" search for tweets with the phrases "very dangerous" and "super dangerous"
+and the hashtags #warning and #alert.
+First time I did this search was may 26th.

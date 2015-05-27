@@ -29,24 +29,26 @@ vectorizer3 = pickle_load3['Vectorizer']
 
 found = collect.find({'computer_classified': 0})
 
-counter = 0
-for doc in found:
-    counter += 1
-    if counter % 100 == 0:
-        print '\n' * 100
-    mongo_id = doc['id']
-    tweet_clean = remove_non_ascii(doc['text'])
+for x in range(10):
+    try:
+        for doc in found:
+            try:
+                mongo_id = doc['id']
+                tweet_clean = remove_non_ascii(doc['text'])
 
-    # Make computerized predictions:
-    nb1_prediction = model1.predict(vectorizer1.transform([tweet_clean]))
-    nb2_prediction = model2.predict(vectorizer2.transform([tweet_clean]))
-    rf1_prediction = model3.predict(vectorizer3.transform([tweet_clean]))
-    doc['computer_classified'] = 1
+                # Make computerized predictions:
+                nb1_prediction = model1.predict(vectorizer1.transform([tweet_clean]))
+                nb2_prediction = model2.predict(vectorizer2.transform([tweet_clean]))
+                rf1_prediction = model3.predict(vectorizer3.transform([tweet_clean]))
+                doc['computer_classified'] = 1
 
-    doc['model1_pred'] = int(nb1_prediction[0])
-    doc['model2_pred'] = int(nb2_prediction[0])
-    doc['model3_pred'] = int(rf1_prediction[0])
-
-    collect.update({'_id':mongo_id}, {"$set": doc}, upsert = False)
+                doc['model1_pred'] = int(nb1_prediction[0])
+                doc['model2_pred'] = int(nb2_prediction[0])
+                doc['model3_pred'] = int(rf1_prediction[0])
+                collect.update({'_id':mongo_id}, {"$set": doc}, upsert = False)
+            except:
+                continue
+    except:
+        continue
 
 os.system('say "your auto classifier has finished running"')

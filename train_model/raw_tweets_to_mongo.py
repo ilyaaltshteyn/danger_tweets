@@ -125,7 +125,7 @@ collect = db.test_collection #change this be the right collection!
 
 info = {'logfile_directory' : "/Users/ilya/Projects/danger_tweets/train_model/",
         'logfile_name' : 'mongoed_tweets_log.txt',
-        'tweet_files_directory': "/Users/ilya/Projects/danger_tweets/collected_on_remote_machine/may_21st/unhydrated_tweets/collected_original_tweets/"
+        'tweet_files_directory': "/Users/ilya/Projects/danger_tweets/remote_machine_data/"
         }
 
 run_all(info['logfile_directory'], 
