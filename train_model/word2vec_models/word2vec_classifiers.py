@@ -21,16 +21,30 @@ def cleanText(corpus):
     corpus = [z.lower().replace('\n','').split() for z in corpus]
     return corpus
 
+
 x_train = cleanText(x_train)
 x_test = cleanText(x_test)
 
-n_dim = 530
-#Initialize model and build vocab
-imdb_w2v = Word2Vec(size=n_dim, min_count=3)
-imdb_w2v.build_vocab(x_train)
+n_dim = 300
 
-#Train the model over train_reviews (this may take several minutes)
-imdb_w2v.train(x_train)
+#                   ***Read in big tweets data***
+import ast
+import pandas as pd
+dir = "/Users/ilya/Projects/ilya@first_remote_computer/collected_on_remote_machine/may_18th/cleaned_data/"
+file = "72_hr_tweets.txt"
+with open(dir+file, 'r') as f:
+    big_tweets = []
+    for t in f:
+        big_tweets.append(ast.literal_eval(t))
+
+def remove_non_ascii(text):
+    return ''.join([i if ord(i) < 128 else ' ' for i in text])
+big_tweets_df = pd.DataFrame(big_tweets)
+big_test = big_tweets_df['text']
+big_test = [remove_non_ascii(x) for x in big_test]
+
+#Initialize GoogleNews model:
+imdb_w2v = Word2Vec.load_word2vec_format(path + 'google_data/GoogleNews-vectors-negative300.bin', binary=True)
 
 #Build word vector for training set by using the average value of all word vectors in the tweet, then scale
 def buildWordVector(text, size):
@@ -51,7 +65,7 @@ train_vecs = np.concatenate([buildWordVector(z, n_dim) for z in x_train])
 train_vecs = scale(train_vecs)
 
 #Train word2vec on test tweets
-imdb_w2v.train(x_test)
+# imdb_w2v.train(x_test)
 
 #Build test tweet vectors then scale
 test_vecs = np.concatenate([buildWordVector(z, n_dim) for z in x_test])
@@ -70,17 +84,60 @@ for x in range(10):
     precision_scores.append(precision_score(y_test, lr.predict(test_vecs)))
     recall_scores.append(recall_score(y_test, lr.predict(test_vecs)))
 
-print 'Test Accuracy: %.2f'%lr.score(test_vecs, y_test)
-print 'Test precisionL %2f' % precision_score(y_test, lr.predict(test_vecs))
-print 'Test recall %2f' % recall_score(y_test, lr.predict(test_vecs))
+print "accuracy: %f" % np.mean(scores)
+print "precision: %f" % np.mean(precision_scores)
+print "recall_scores: %f" % np.mean(recall_scores)
 
 # Try a naivebayes classifier
 from sklearn.naive_bayes import GaussianNB
-nb = GaussianNB()
-nb.fit(train_vecs, y_train)
 
-print 'Test Accuracy: %.2f'%nb.score(test_vecs, y_test)
-print 'Test precisionL %2f' % precision_score(y_test, nb.predict(test_vecs))
-print 'Test recall %2f' % recall_score(y_test, nb.predict(test_vecs))
+scores = []
+precision_scores=[]
+recall_scores=[]
+for x in range(10):
+    print x
+    nb = GaussianNB()
+    nb.fit(train_vecs, y_train)
+    scores.append(lr.score(test_vecs, y_test))
+    precision_scores.append(precision_score(y_test, lr.predict(test_vecs)))
+    recall_scores.append(recall_score(y_test, lr.predict(test_vecs)))
+
+print "accuracy: %f" % np.mean(scores)
+print "precision: %f" % np.mean(precision_scores)
+print "recall_scores: %f" % np.mean(recall_scores)
+
+# Try out the above classifier on the big tweets data
+test_vecs = np.concatenate([buildWordVector(z, n_dim) for z in big_test])
+test_vecs = scale(test_vecs)
+output = nb.predict(test_vecs)
+output = pd.Series(output)
+predicted_danger_tweets = []
+for k, v in enumerate(output):
+    if v == True:
+        predicted_danger_tweets.append(big_test[k])
+
+output = nb.predict_proba(test_vecs)
+output = pd.Series(output)
+predicted_proba_danger_tweets = []
+for k, v in enumerate(output):
+    if v[0] > .999:
+        predicted_proba_danger_tweets.append(big_test[k])
+
+# Try out the linear regression classifier on the big tweets data:
+test_vecs = np.concatenate([buildWordVector(z, n_dim) for z in big_test])
+test_vecs = scale(test_vecs)
+output = lr.predict(test_vecs)
+output = pd.Series(output)
+predicted_danger_tweets = []
+for k, v in enumerate(output):
+    if v == True:
+        predicted_danger_tweets.append(big_test[k])
+
+output = lr.predict_proba(test_vecs)
+output = pd.Series(output)
+predicted_proba_danger_tweets = []
+for k, v in enumerate(output):
+    if v[0] > .999:
+        predicted_proba_danger_tweets.append(big_test[k])
 
 

@@ -20,26 +20,6 @@ with open(path + 'api_details.txt', 'r') as a:
 def remove_non_ascii(text):
     return ''.join([i if ord(i) < 128 else ' ' for i in text])
 
-# def url_maker(queries_dict):
-#     """Returns twitter query url suffix for hashtags, search phrases and words. 
-#     The inputs must be in a dictionary with a key for each search element type.
-#     Returns url to be used in twitter query."""
-
-#     if queries_dict['hashtags']:
-#         output ='%23' + queries_dict['hashtags'][0] 
-#         for hashtag in queries_dict['hashtags'][1:]:
-#             output += '+%23' + hashtag
-
-#     for phrase in queries_dict['phrases']:
-#         print phrase.split(' ')
-#         words = '+%22' + phrase.split(' ')[0]
-#         if len(phrase.split(' ')) > 1:
-#             for word in phrase.split(' ')[1:]:
-#                 words += '%22' + word
-#         output += words
-#         # output += '%22'
-#     print output
-
 def api_request(twitter_query):
     """Takes a list of hashtag queries (the part after search/ when you search
     for the hashtag on twitter.com) and returns tweets with those hashtags. 
