@@ -9,6 +9,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_extraction import text 
 
 client = MongoClient()
 db = client.tweets
@@ -79,11 +80,42 @@ df.columns = ['danger', 'tweet']
 
 df['tweet'] = [x.strip() for x in df['tweet']]
 
+# Lowercase all data, and strip away tweets that are shorter than 10 characters.
+# Also kill any punctuation. 
+import re
+regex = re.compile('[%s]' % re.escape(string.punctuation))
+def punctuation_stripper(s):
+    return regex.sub('', s)
+
+def process_tweet(tweet):
+    """This function lowercases the tweet and kills any punctuation in it. 
+    It also strips surrounding whitespace and converts every character to ascii.
+    Returns the processed tweet, or None if the tweet is shorter than 10 chars."""
+    output = remove_non_ascii(tweet)
+    output = output.lower()
+    output = output.strip()
+    output = punctuation_stripper(output)
+    if len(output) < 10: 
+        return None
+    else: 
+        return output
+
+df['tweet'] = [process_tweet(x) for x in df.tweet]
+
 # Build vectorizers and vectorize data:
-count_vectorizer = CountVectorizer(min_df=1, stop_words='english',ngram_range=(0,6))
+my_additional_stop_words = []
+stop_words_file = "/Users/ilya/Projects/danger_tweets/train_model/locations_stop_words.txt"
+with open(stop_words_file, 'r') as infile:
+    words = infile.readlines()
+    for word in words:
+        my_additional_stop_words.append(word[:-1])
+
+stop_words = text.ENGLISH_STOP_WORDS.union(my_additional_stop_words)
+
+count_vectorizer = CountVectorizer(min_df=1, stop_words='english',ngram_range=(0,4))
 x_count_vec = count_vectorizer.fit_transform(df.tweet)
 
-tfidf_vectorizer = TfidfVectorizer(min_df=1, stop_words='english',ngram_range=(0,6))
+tfidf_vectorizer = TfidfVectorizer(min_df=1, stop_words='english',ngram_range=(0,4))
 x_tfidf_vec = tfidf_vectorizer.fit_transform(df.tweet)
 
 #               ***Build new models***
@@ -100,7 +132,8 @@ nb2.fit(x_tfidf_vec, df.danger)
 rf1 = RandomForestClassifier(max_depth = 250, n_estimators = 15)
 rf.fit(x_tfidf_vec, df.danger)
 
-# 
+# SVM
+
 
 
 
