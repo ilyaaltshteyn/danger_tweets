@@ -1,3 +1,4 @@
+#!/usr/local/bin/python
 # This script asks a human to classify tweets that the computer said might be
 # about danger.
 

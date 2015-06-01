@@ -1,3 +1,4 @@
+#!/usr/local/bin/python
 # This script grabs all unhydrated tweets and throws them into a mongo database.
 # You must specify the details of where the tweets are, where the log is that
 # records which tweets have already been added to the database, and which 

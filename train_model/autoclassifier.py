@@ -1,3 +1,4 @@
+#!/usr/local/bin/python
 # Grabs tweets from mongo database that haven't been classified yet. Runs
 # several classifiers on them, and adds the classifiers' answers to the mongo
 # database. For every 100 that it classifies, it goes back and asks a human to
