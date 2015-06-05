@@ -1,5 +1,8 @@
 #!/usr/local/bin/python
-# This script grabs all unhydrated tweets and throws them into a mongo database.
+# This script grabs retweet counts for every tweet from the 2hr hydrated tweets
+# file, finds the tweet that the retweet count belongs to in the mongo database,
+# and adds the retweet count as a new field in that tweet's mongo document.
+
 # You must specify the details of where the tweets are, where the log is that
 # records which tweets have already been added to the database, and which 
 # collection in the database you want to use.

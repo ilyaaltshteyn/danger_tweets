@@ -39,8 +39,8 @@ for tweet in nb1_danger_coded_tweets:
     nb1_new_tweets.append(tweet['text'])
     nb1_new_tweets_danger.append(tweet['human_code'])
 
-    # nb1_new_tweets.append(non_danger_tweets.next()['text'])
-    # nb1_new_tweets_danger.append(0)
+    nb1_new_tweets.append(non_danger_tweets.next()['text'])
+    nb1_new_tweets_danger.append(0)
 
 nb1_new_tweets = [remove_non_ascii(x).strip() for x in nb1_new_tweets]
 nb1_new_tweets_danger = [str(x) for x in nb1_new_tweets_danger]
@@ -59,9 +59,7 @@ nb2_new_tweets_danger = [str(x) for x in nb2_new_tweets_danger]
 
 
 
-#  Add old data in there:
-
-
+#  Add old data to nb1 tweets:
 dir =  "/Users/ilya/Projects/danger_tweets/train_model/"
 file = "study2_tweets.txt"
 with open(dir+file, 'r') as f:
@@ -83,7 +81,7 @@ df['tweet'] = [x.strip() for x in df['tweet']]
 
 # Lowercase all data, and strip away tweets that are shorter than 10 characters.
 # Also kill any punctuation. 
-import re
+import re, string
 regex = re.compile('[%s]' % re.escape(string.punctuation))
 def punctuation_stripper(s):
     return regex.sub('', s)
