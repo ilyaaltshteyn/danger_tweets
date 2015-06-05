@@ -11,7 +11,7 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction import text 
 from sklearn.metrics import precision_recall_fscore_support
-
+from sklearn.cross_validation import train_test_split
 
 client = MongoClient()
 db = client.tweets
@@ -96,7 +96,6 @@ with open(stop_words_file, 'r') as infile:
 
 
 # Train-test split the data:
-from sklearn.cross_validation import train_test_split
 
 def cross_val_nb1(ngram_low, ngram_high, alpha, which_stop_words):
     """Used for cross-validating and testing hyperparameters of a naive bayes
@@ -169,6 +168,7 @@ plt.show()
 # ngram_hi_vals = [5]
 # alpha = [.5]
 # which_stop_words = [1]
+
 # Model 2:
 # 35(2, 5, 2, 1, 0.87833351954492256) (2, 5, 2, 1, 0.72428583820474102)
 # Those hyperparameters are:
@@ -243,10 +243,82 @@ plt.show()
 # ngram_low_vals = [0] and [1]
 # ngram_hi_vals = [2] and [5]
 # alpha = [.3] and [.15]
-# which_stop_words = [1] and [2]
+# which_stop_words = [1](my custom ones) and [2](my custom ones + the regular ones)
 
 
 # Now build the 4 models you chose above, and pickle:
+import pickle
+all_models = {}
+
+# Read in custom stop words list:
+my_additional_stop_words = []
+stop_words_file = "/Users/ilya/Projects/danger_tweets/train_model/locations_stop_words.txt"
+with open(stop_words_file, 'r') as infile:
+    words = infile.readlines()
+    for word in words:
+        my_additional_stop_words.append(word[:-1])
 
 
+#  ***BUILD MODEL ONE:
+# Count vectorizer, ngram_low_vals = [0], ngram_hi_vals = [5], alpha = [.5], 
+# using my custom stop words.
 
+count_vectorizer = CountVectorizer(min_df=1, stop_words = my_additional_stop_words, 
+                                   ngram_range=(0,5))
+x_all_count_vec = count_vectorizer.fit_transform(df.tweet)
+
+nb1_countvect = MultinomialNB(alpha = .5)
+nb1_countvect.fit(x_all_count_vec, df.danger)
+
+all_models['model1'] = {'Vectorizer' : count_vectorizer,
+                      'Model' : nb1_countvect}
+
+
+#  ***BUILD MODEL TWO:
+# Count vectorizer, ngram_low_vals = [2], ngram_hi_vals = [5], alpha = [2],
+# using my custom stop words.
+
+count_vectorizer_nb2 = CountVectorizer(min_df=1, stop_words = my_additional_stop_words, 
+                                   ngram_range=(2,5))
+x_all_countvect_nb2 = count_vectorizer_nb2.fit_transform(df.tweet)
+
+nb2_countvect = MultinomialNB(alpha = 2)
+nb2_countvect.fit(x_all_countvect_nb2, df.danger)
+
+all_models['model2'] = {'Vectorizer' : count_vectorizer_nb2,
+                      'Model' : nb2_countvect}
+
+
+#  ***BUILD MODEL THREE:
+# Tfidf vectorizer, ngram_low_vals = [0], ngram_hi_vals = [2], alpha = [.3]
+# using my custom stop words.
+
+tfidf_vectorizer_nb3 = TfidfVectorizer(min_df=1, stop_words = my_additional_stop_words, 
+                                       ngram_range=(0,2))
+x_all_tfidfvect_nb3 = tfidf_vectorizer_nb3.fit_transform(df.tweet)
+
+nb3_tfidfvect = MultinomialNB(alpha = .3)
+nb3_tfidfvect.fit(x_all_tfidfvect_nb3, df.danger)
+
+all_models['model3'] = {'Vectorizer' : tfidf_vectorizer_nb3,
+                      'Model' : nb3_tfidfvect}
+
+
+#  ***BUILD MODEL FOUR:
+# Tfidf vectorizer, ngram_low_vals = [1], ngram_hi_vals = [5], alpha = [.15],
+# using my custom stop words ALONG WITH the scikit standard stop words.
+
+all_stop_words = text.ENGLISH_STOP_WORDS.union(my_additional_stop_words)
+
+tfidf_vectorizer_nb4 = TfidfVectorizer(min_df=1, stop_words = all_stop_words, 
+                                       ngram_range=(1,5))
+x_all_tfidfvect_nb4 = tfidf_vectorizer_nb4.fit_transform(df.tweet)
+
+nb4_tfidfvect = MultinomialNB(alpha = .15)
+nb4_tfidfvect.fit(x_all_tfidfvect_nb4, df.danger)
+
+all_models['model4'] = {'Vectorizer' : tfidf_vectorizer_nb4,
+                      'Model' : nb4_tfidfvect}
+
+with open('/Users/ilya/Projects/danger_tweets/train_model/all_models_june5th.p', 'wb') as pickleout:
+    pickle.dump(obj = all_models, file = pickleout)
