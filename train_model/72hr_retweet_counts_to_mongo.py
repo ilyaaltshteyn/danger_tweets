@@ -1,5 +1,5 @@
 #!/usr/local/bin/python
-# This script grabs retweet counts for every tweet from the 2hr hydrated tweets
+# This script grabs retweet counts for every tweet from the 72hr hydrated tweets
 # file, finds the tweet that the retweet count belongs to in the mongo database,
 # and adds the retweet count as a new field in that tweet's mongo document.
 
@@ -44,9 +44,9 @@ def name_to_metainfo(tweetfile_directory, tweetfile_name):
     try:
         dictionary = {}
         splitup = tweetfile_name.split(' ')
-        dictionary['2hr_hydrated_file_num'] = splitup[1]
-        dictionary['2hr_hydration_date'] = splitup[2]
-        dictionary['2hr_hydration_time'] = splitup[3]
+        dictionary['72hr_hydrated_file_num'] = splitup[1]
+        dictionary['72hr_hydration_date'] = splitup[2]
+        dictionary['72hr_hydration_time'] = splitup[3]
         return dictionary
 
     except Exception as e:
@@ -73,9 +73,9 @@ def file_to_tweets(log_file_directory, log_file_name, tweet_file_directory, twee
     for tweet in just_tweets.items():
         try:
             output = metainfo.copy()
-            output['2hr_hydrate_tweet_id'] = tweet[1]['id']
-            output['2hr_retweet_count'] = tweet[1]['retweet_count']
-            output['2hr_hydrate_tweet_text'] = tweet[1]['text']
+            output['72hr_hydrate_tweet_id'] = tweet[1]['id']
+            output['72hr_retweet_count'] = tweet[1]['retweet_count']
+            output['72hr_hydrate_tweet_text'] = tweet[1]['text']
             tweets_with_metainfo.append(output)
         except Exception as e:
             print e
@@ -93,16 +93,16 @@ def tweets_to_mongo(list_of_tweets):
 
     for tweet in list_of_tweets:
         try:
-            id_num = tweet['2hr_hydrate_tweet_id']
-            # Update the tweet's mongo document with the 2hr hydration info:
+            id_num = tweet['72hr_hydrate_tweet_id']
+            # Update the tweet's mongo document with the 72hr hydration info:
             collect.update({ '_id' : id_num }, 
                            { '$set' : {
-                                       '2hr_hydrate_tweet_id' : tweet['2hr_hydrate_tweet_id'], 
-                                       '2hr_retweet_count' : tweet['2hr_retweet_count'], 
-                                       '2hr_hydrate_tweet_text' : tweet['2hr_hydrate_tweet_text'],
-                                       '2hr_hydrated_file_num' : tweet['2hr_hydrated_file_num'],
-                                       '2hr_hydration_date' : tweet['2hr_hydration_date'],
-                                       '2hr_hydration_time' : tweet['2hr_hydration_time']
+                                       '72hr_hydrate_tweet_id' : tweet['72hr_hydrate_tweet_id'], 
+                                       '72hr_retweet_count' : tweet['72hr_retweet_count'], 
+                                       '72hr_hydrate_tweet_text' : tweet['72hr_hydrate_tweet_text'],
+                                       '72hr_hydrated_file_num' : tweet['72hr_hydrated_file_num'],
+                                       '72hr_hydration_date' : tweet['72hr_hydration_date'],
+                                       '72hr_hydration_time' : tweet['72hr_hydration_time']
                                        } })
         except Exception as e:
             print e
@@ -133,8 +133,8 @@ db = client.tweets
 collect = db.test_collection #change this be the right collection!
 
 info = {'logfile_directory' : "/Users/ilya/Projects/danger_tweets/train_model/",
-        'logfile_name' : '2hr_mongoed_tweets_log.txt',
-        'tweet_files_directory': "/Users/ilya/Projects/danger_tweets/remote_machine_data/2_hrs_hydrated_tweets/"
+        'logfile_name' : '72hr_mongoed_tweets_log.txt',
+        'tweet_files_directory': "/Users/ilya/Projects/danger_tweets/remote_machine_data/72_hrs_hydrated_tweets/"
         }
 
 run_all(info['logfile_directory'], 

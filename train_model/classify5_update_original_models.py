@@ -1,4 +1,4 @@
-# This script updates the first two naive_bayes models with the new data from
+# This script updates the first naive_bayes model with the new data from
 # the first pass of human-coding (where I hand-coded about 1200 tweets)
 
 # Connect to mongo and pull in tweets that each model said were about danger.
@@ -10,6 +10,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction import text 
+from sklearn.metrics import precision_recall_fscore_support
 
 
 client = MongoClient()
@@ -18,10 +19,8 @@ collect = db.test_collection #change this be the right collection!
 
 # Grab tweets that each model said were about danger:
 print collect.count( { 'model1_pred' : 1}) #846
-print collect.count( { 'model2_pred' : 1}) #1013
 
 nb1_danger_coded_tweets = collect.find( { 'model1_pred' : 1})
-nb2_danger_coded_tweets = collect.find( { 'model2_pred' : 1})
 
 # Grab tweets that all 3 models said were not about danger:
 non_danger_tweets = collect.find( { '$and' : [ { 'model1_pred':0 }, 
@@ -44,19 +43,6 @@ for tweet in nb1_danger_coded_tweets:
 
 nb1_new_tweets = [remove_non_ascii(x).strip() for x in nb1_new_tweets]
 nb1_new_tweets_danger = [str(x) for x in nb1_new_tweets_danger]
-
-nb2_new_tweets = []
-nb2_new_tweets_danger = []
-for tweet in nb2_danger_coded_tweets:
-    nb2_new_tweets.append(tweet['text'])
-    nb2_new_tweets_danger.append(tweet['human_code'])
-
-    nb2_new_tweets.append(non_danger_tweets.next()['text'])
-    nb2_new_tweets_danger.append(0)
-
-nb2_new_tweets = [remove_non_ascii(x).strip() for x in nb2_new_tweets]
-nb2_new_tweets_danger = [str(x) for x in nb2_new_tweets_danger]
-
 
 
 #  Add old data to nb1 tweets:
@@ -108,32 +94,159 @@ with open(stop_words_file, 'r') as infile:
     for word in words:
         my_additional_stop_words.append(word[:-1])
 
-stop_words = text.ENGLISH_STOP_WORDS.union(my_additional_stop_words)
 
-count_vectorizer = CountVectorizer(min_df=1, stop_words = stop_words, ngram_range=(0,4))
-x_count_vec = count_vectorizer.fit_transform(df.tweet)
+# Train-test split the data:
+from sklearn.cross_validation import train_test_split
 
-tfidf_vectorizer = TfidfVectorizer(min_df=1, stop_words = stop_words,ngram_range=(0,4))
-x_tfidf_vec = tfidf_vectorizer.fit_transform(df.tweet)
+def cross_val_nb1(ngram_low, ngram_high, alpha, which_stop_words):
+    """Used for cross-validating and testing hyperparameters of a naive bayes
+    model with a count vectorizer."""
 
-#               ***Build new models***
+    if which_stop_words ==1:
+        stop_words = my_additional_stop_words
+    else:
+        stop_words = text.ENGLISH_STOP_WORDS.union(my_additional_stop_words)
 
-# Naive bayes with count vectorizer:
-nb1 = MultinomialNB(alpha = 1)
-nb1.fit(x_count_vec, df.danger)
+    x_train, x_test, y_train, y_test = train_test_split(df.tweet, df.danger)
 
-# Naive bayes with tfidf vectorizer:
-nb2 = MultinomialNB(alpha = .3)
-nb2.fit(x_tfidf_vec, df.danger)
+    count_vectorizer = CountVectorizer(min_df=1, stop_words = stop_words, ngram_range=(ngram_low,ngram_high))
+    x_train_count_vec = count_vectorizer.fit_transform(x_train)
+    x_test_count_vec = count_vectorizer.transform(x_test)
 
-# Random forest with tfidf vectorizer:
-rf1 = RandomForestClassifier(max_depth = 250, n_estimators = 15)
-rf1.fit(x_tfidf_vec, df.danger)
+    # Naive bayes with count vectorizer:
+    nb1 = MultinomialNB(alpha = alpha)
+    nb1.fit(x_train_count_vec, y_train)
+    nb_pred = nb1.predict(x_test_count_vec)
+    # nb_score = nb1.score(x_test_count_vec, y_test)
+    precision, recall, _, _ = precision_recall_fscore_support(y_test, nb_pred)
 
-# SVM
+    return precision[1], recall[1]
+
+# print cross_val_nb1(0,2,1,0)
+
+ngram_low_vals = [0,1,2]
+ngram_hi_vals = [2,5]
+alpha = [.5, 1, 2]
+which_stop_words = [1,2]
+precisions = []
+accuracies = []
+
+# Cross validate, testing for the effects of all of those variables above:
+for a in ngram_low_vals:
+    for b in ngram_hi_vals:
+        for c in alpha:
+            for d in which_stop_words:
+                print a, b, c, d
+                precision = 0
+                accuracy = 0
+                for i in range(5):
+                    prec, acc = cross_val_nb1(a,b,c,d)
+                    precision += prec
+                    accuracy += acc
+                precisions.append((a,b,c,d,precision/5))
+                accuracies.append((a,b,c,d,accuracy/5))
+
+from matplotlib import pyplot as plt
+import seaborn as sns
+sns.set(style = 'whitegrid')
+import numpy as np
+xs = range(len(precisions))
+plt.plot(xs, [x[4] for x in precisions], label = "Precision")
+plt.plot(xs, [x[4] for x in accuracies], label = "Recall")
+plt.legend(fontsize = 14)
+plt.xticks(xs)
+plt.xlabel('Hyperparameter combo number', fontsize = 14)
+plt.ylabel('Performance', fontsize = 14)
+plt.title("Optimizing precision/recall tradeoff of a naive bayes classifier for identifying danger tweets", fontsize = 15)
+sns.despine()
+plt.show()
+
+# The ideal count vectorizer models have this performance for precisiona and recall, with these hyperparameters:
+# Model 1:
+# 7(0, 5, 0.5, 1, 0.89254189681151119) (0, 5, 0.5, 1, 0.73376310630758468)
+# Those hyperparameters are:
+# ngram_low_vals = [0]
+# ngram_hi_vals = [5]
+# alpha = [.5]
+# which_stop_words = [1]
+# Model 2:
+# 35(2, 5, 2, 1, 0.87833351954492256) (2, 5, 2, 1, 0.72428583820474102)
+# Those hyperparameters are:
+# ngram_low_vals = [2]
+# ngram_hi_vals = [5]
+# alpha = [2]
+# which_stop_words = [1]
+
+# Now do the same thing but for a tfidf vectorizer (model nb2):
+
+def cross_val_nb2(ngram_low, ngram_high, alpha, which_stop_words):
+    """Used for cross-validating and grid searching hyperparameters for a naive
+    bayes classifier with a tfidf vectorizer."""
+
+    if which_stop_words == 1:
+        stop_words = my_additional_stop_words
+    else:
+        stop_words = text.ENGLISH_STOP_WORDS.union(my_additional_stop_words)
+
+    x_train, x_test, y_train, y_test = train_test_split(df.tweet, df.danger)
+    
+    tfidf_vectorizer = TfidfVectorizer(min_df=1, stop_words = stop_words, ngram_range=(ngram_low,ngram_high))
+    x_train_tfidf_vec = tfidf_vectorizer.fit_transform(x_train)
+    x_test_tfidf_vec = tfidf_vectorizer.transform(x_test)
+
+    # Naive bayes with tfidf vectorizer:
+    nb2 = MultinomialNB(alpha = alpha)
+    nb2.fit(x_train_tfidf_vec, y_train)
+    nb_pred = nb2.predict(x_test_tfidf_vec)
+    precision, recall, _, _ = precision_recall_fscore_support(y_test, nb_pred)
+
+    return precision[1], recall[1]
+
+# print cross_val_nb1(0,2,1,0)
+
+ngram_low_vals = [0,1]
+ngram_hi_vals = [2,5]
+alpha = [.15, .3, .5, .75]
+which_stop_words = [1,2]
+precisions_nb2 = []
+recalls_nb2 = []
+
+# Cross validate, testing for the effects of all of those variables above:
+for a in ngram_low_vals:
+    for b in ngram_hi_vals:
+        for c in alpha:
+            for d in which_stop_words:
+                print a, b, c, d
+                precision = 0
+                recall = 0
+                for i in range(5):
+                    prec, rec = cross_val_nb2(a,b,c,d)
+                    precision += prec
+                    recall += rec
+                precisions_nb2.append((a,b,c,d,precision/5))
+                recalls_nb2.append((a,b,c,d,recall/5))
+
+xs = range(len(precisions_nb2))
+plt.plot(xs, [x[4] for x in precisions_nb2], label = "Precision")
+plt.plot(xs, [x[4] for x in recalls_nb2], label = "Recall")
+plt.legend(fontsize = 14)
+plt.xticks(xs)
+plt.xlabel('Hyperparameter combo number', fontsize = 14)
+plt.ylabel('Performance', fontsize = 14)
+plt.title("Optimizing precision/recall tradeoff of a naive bayes classifier with tfidf vectorizer for identifying danger tweets", fontsize = 15)
+sns.despine()
+plt.show()
+
+# The ideal tfidf models have this precision/recall, with these hyperparameters:
+# 2,(0, 2, 0.3, 1, 0.94663690999140049) (0, 2, 0.3, 1, 0.6282315067245009)
+# 25, (1, 5, 0.15, 2, 0.83394295834811538) (1, 5, 0.15, 2, 0.74522761208927213)
+# ngram_low_vals = [0] and [1]
+# ngram_hi_vals = [2] and [5]
+# alpha = [.3] and [.15]
+# which_stop_words = [1] and [2]
 
 
-
+# Now build the 4 models you chose above, and pickle:
 
 
 
