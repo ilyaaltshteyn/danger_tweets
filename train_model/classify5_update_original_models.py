@@ -19,8 +19,17 @@ collect = db.test_collection #change this be the right collection!
 
 # Grab tweets that each model said were about danger:
 print collect.count( { 'model1_pred' : 1}) #846
+print collect.count( { 'model2_pred' : 1}) #1013
+print collect.count( { 'model3_pred' : 1}) #314
+print collect.count( { '$or' : [ 
+                    { 'model1_pred' : 1},
+                    { 'model2_pred' : 1},
+                    { 'model3_pred' : 1}] }) #1210
 
-nb1_danger_coded_tweets = collect.find( { 'model1_pred' : 1})
+nb1_danger_coded_tweets = collect.find( { '$or' : [ 
+                    { 'model1_pred' : 1},
+                    { 'model2_pred' : 1},
+                    { 'model3_pred' : 1}] })
 
 # Grab tweets that all 3 models said were not about danger:
 non_danger_tweets = collect.find( { '$and' : [ { 'model1_pred':0 }, 
@@ -38,8 +47,12 @@ for tweet in nb1_danger_coded_tweets:
     nb1_new_tweets.append(tweet['text'])
     nb1_new_tweets_danger.append(tweet['human_code'])
 
+    # Append two non-danger tweets for every possibly-danger tweet:
     nb1_new_tweets.append(non_danger_tweets.next()['text'])
     nb1_new_tweets_danger.append(0)
+    nb1_new_tweets.append(non_danger_tweets.next()['text'])
+    nb1_new_tweets_danger.append(0)
+
 
 nb1_new_tweets = [remove_non_ascii(x).strip() for x in nb1_new_tweets]
 nb1_new_tweets_danger = [str(x) for x in nb1_new_tweets_danger]
@@ -160,21 +173,23 @@ plt.title("Optimizing precision/recall tradeoff of a naive bayes classifier for 
 sns.despine()
 plt.show()
 
+for x in range(len(precisions)):
+    print precisions[x], accuracies[x]
 # The ideal count vectorizer models have this performance for precisiona and recall, with these hyperparameters:
 # Model 1:
-# 7(0, 5, 0.5, 1, 0.89254189681151119) (0, 5, 0.5, 1, 0.73376310630758468)
+# 0(0, 2, 0.5, 1, 0.87289493969136633) (0, 2, 0.5, 1, 0.74443152635635612)
 # Those hyperparameters are:
 # ngram_low_vals = [0]
-# ngram_hi_vals = [5]
+# ngram_hi_vals = [2]
 # alpha = [.5]
 # which_stop_words = [1]
 
 # Model 2:
-# 35(2, 5, 2, 1, 0.87833351954492256) (2, 5, 2, 1, 0.72428583820474102)
+# 2(0, 2, 1, 1, 0.94473621934186391) (0, 2, 1, 1, 0.60729764887849147)
 # Those hyperparameters are:
-# ngram_low_vals = [2]
-# ngram_hi_vals = [5]
-# alpha = [2]
+# ngram_low_vals = [0]
+# ngram_hi_vals = [2]
+# alpha = [1]
 # which_stop_words = [1]
 
 # Now do the same thing but for a tfidf vectorizer (model nb2):
@@ -237,13 +252,15 @@ plt.title("Optimizing precision/recall tradeoff of a naive bayes classifier with
 sns.despine()
 plt.show()
 
+for x in range(len(precisions)):
+    print precisions_nb2[x], recalls_nb2[x]
 # The ideal tfidf models have this precision/recall, with these hyperparameters:
-# 2,(0, 2, 0.3, 1, 0.94663690999140049) (0, 2, 0.3, 1, 0.6282315067245009)
-# 25, (1, 5, 0.15, 2, 0.83394295834811538) (1, 5, 0.15, 2, 0.74522761208927213)
+# 8, (0, 5, 0.15, 1, 0.95551887174468342) (0, 5, 0.15, 1, 0.56277806992555335)
+# 16,(1, 2, 0.15, 1, 0.87443407215339275) (1, 2, 0.15, 1, 0.71733605619063101)
 # ngram_low_vals = [0] and [1]
-# ngram_hi_vals = [2] and [5]
-# alpha = [.3] and [.15]
-# which_stop_words = [1](my custom ones) and [2](my custom ones + the regular ones)
+# ngram_hi_vals = [5] and [2]
+# alpha = [.15] and [.15]
+# which_stop_words = [1](my custom ones) and [1]
 
 
 # Now build the 4 models you chose above, and pickle:
@@ -264,7 +281,7 @@ with open(stop_words_file, 'r') as infile:
 # using my custom stop words.
 
 count_vectorizer = CountVectorizer(min_df=1, stop_words = my_additional_stop_words, 
-                                   ngram_range=(0,5))
+                                   ngram_range=(0,2))
 x_all_count_vec = count_vectorizer.fit_transform(df.tweet)
 
 nb1_countvect = MultinomialNB(alpha = .5)
@@ -279,10 +296,10 @@ all_models['model1'] = {'Vectorizer' : count_vectorizer,
 # using my custom stop words.
 
 count_vectorizer_nb2 = CountVectorizer(min_df=1, stop_words = my_additional_stop_words, 
-                                   ngram_range=(2,5))
+                                   ngram_range=(0,2))
 x_all_countvect_nb2 = count_vectorizer_nb2.fit_transform(df.tweet)
 
-nb2_countvect = MultinomialNB(alpha = 2)
+nb2_countvect = MultinomialNB(alpha = 1)
 nb2_countvect.fit(x_all_countvect_nb2, df.danger)
 
 all_models['model2'] = {'Vectorizer' : count_vectorizer_nb2,
@@ -294,10 +311,10 @@ all_models['model2'] = {'Vectorizer' : count_vectorizer_nb2,
 # using my custom stop words.
 
 tfidf_vectorizer_nb3 = TfidfVectorizer(min_df=1, stop_words = my_additional_stop_words, 
-                                       ngram_range=(0,2))
+                                       ngram_range=(0, 5))
 x_all_tfidfvect_nb3 = tfidf_vectorizer_nb3.fit_transform(df.tweet)
 
-nb3_tfidfvect = MultinomialNB(alpha = .3)
+nb3_tfidfvect = MultinomialNB(alpha = .15)
 nb3_tfidfvect.fit(x_all_tfidfvect_nb3, df.danger)
 
 all_models['model3'] = {'Vectorizer' : tfidf_vectorizer_nb3,
@@ -310,8 +327,8 @@ all_models['model3'] = {'Vectorizer' : tfidf_vectorizer_nb3,
 
 all_stop_words = text.ENGLISH_STOP_WORDS.union(my_additional_stop_words)
 
-tfidf_vectorizer_nb4 = TfidfVectorizer(min_df=1, stop_words = all_stop_words, 
-                                       ngram_range=(1,5))
+tfidf_vectorizer_nb4 = TfidfVectorizer(min_df=1, stop_words = my_additional_stop_words, 
+                                       ngram_range=(1, 2))
 x_all_tfidfvect_nb4 = tfidf_vectorizer_nb4.fit_transform(df.tweet)
 
 nb4_tfidfvect = MultinomialNB(alpha = .15)
