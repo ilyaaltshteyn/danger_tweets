@@ -17,7 +17,7 @@ client = MongoClient()
 db = client.tweets
 collect = db.test_collection #change this be the right collection!
 
-# Grab tweets that each model said were about danger:
+# Count tweets that each model said were about danger:
 print collect.count( { 'model1_pred' : 1}) #846
 print collect.count( { 'model2_pred' : 1}) #1013
 print collect.count( { 'model3_pred' : 1}) #314
@@ -25,6 +25,18 @@ print collect.count( { '$or' : [
                     { 'model1_pred' : 1},
                     { 'model2_pred' : 1},
                     { 'model3_pred' : 1}] }) #1210
+
+# How well did each model do?
+print collect.count( { '$and' : [
+                     { 'model1_pred' : 1},
+                     { 'human_code' : 1} ] } ) #185/846 = .21
+print collect.count( { '$and' : [
+                     { 'model2_pred' : 1},
+                     { 'human_code' : 1} ] } ) #200/1013 = .20
+print collect.count( { '$and' : [
+                     { 'model3_pred' : 1},
+                     { 'human_code' : 1} ] } ) #160/314 = .51
+
 
 nb1_danger_coded_tweets = collect.find( { '$or' : [ 
                     { 'model1_pred' : 1},
@@ -175,14 +187,15 @@ plt.show()
 
 for x in range(len(precisions)):
     print precisions[x], accuracies[x]
-# The ideal count vectorizer models have this performance for precisiona and recall, with these hyperparameters:
+# The ideal count vectorizer models have this performance for precision and recall, with these hyperparameters:
 # Model 1:
-# 0(0, 2, 0.5, 1, 0.87289493969136633) (0, 2, 0.5, 1, 0.74443152635635612)
+# 0(0, 5, 0.5, 2, 0.73) (0, 5, 0.5, 2, 0.84)
 # Those hyperparameters are:
 # ngram_low_vals = [0]
-# ngram_hi_vals = [2]
+# ngram_hi_vals = [5]
 # alpha = [.5]
-# which_stop_words = [1]
+# which_stop_words = [2] (all of them!)
+
 
 # Model 2:
 # 2(0, 2, 1, 1, 0.94473621934186391) (0, 2, 1, 1, 0.60729764887849147)
@@ -278,10 +291,10 @@ with open(stop_words_file, 'r') as infile:
 
 #  ***BUILD MODEL ONE:
 # Count vectorizer, ngram_low_vals = [0], ngram_hi_vals = [5], alpha = [.5], 
-# using my custom stop words.
-
-count_vectorizer = CountVectorizer(min_df=1, stop_words = my_additional_stop_words, 
-                                   ngram_range=(0,2))
+# using all of the stop words (mine + others)
+all_stop_words = text.ENGLISH_STOP_WORDS.union(my_additional_stop_words)
+count_vectorizer = CountVectorizer(min_df=1, stop_words = all_stop_words, 
+                                   ngram_range=(0,5))
 x_all_count_vec = count_vectorizer.fit_transform(df.tweet)
 
 nb1_countvect = MultinomialNB(alpha = .5)
@@ -324,8 +337,6 @@ all_models['model3'] = {'Vectorizer' : tfidf_vectorizer_nb3,
 #  ***BUILD MODEL FOUR:
 # Tfidf vectorizer, ngram_low_vals = [1], ngram_hi_vals = [5], alpha = [.15],
 # using my custom stop words ALONG WITH the scikit standard stop words.
-
-all_stop_words = text.ENGLISH_STOP_WORDS.union(my_additional_stop_words)
 
 tfidf_vectorizer_nb4 = TfidfVectorizer(min_df=1, stop_words = my_additional_stop_words, 
                                        ngram_range=(1, 2))

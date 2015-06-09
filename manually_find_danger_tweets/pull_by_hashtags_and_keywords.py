@@ -46,16 +46,17 @@ def api_request(twitter_query):
     tweets = urllib2.urlopen(response)
     return json.load(tweets)
 
-all_tweets = []
+# all_tweets = []
 query_elements = '?q="very%20dangerous"%20OR%20"super%20dangerous"%20OR%20%23warning%20OR%20%23alert&src=typd&lang=en&retweet=false'
 for x in range(100):
     search_response = api_request(query_elements)
     for x in search_response['statuses']:
+        print x
         all_tweets.append(x['text'])
     query_elements = search_response['search_metadata']['next_results']
 
 all_tweets = set(all_tweets)
-with open('tweets_from_search.txt', 'a') as output:
+with open('tweets_from_search_june6th.txt', 'a') as output:
     for tweet in all_tweets:
         tweet = remove_non_ascii(tweet)
         output.write(tweet + '\n')

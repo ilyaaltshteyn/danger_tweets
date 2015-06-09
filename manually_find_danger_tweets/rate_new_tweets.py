@@ -3,7 +3,7 @@
 import pandas as pd
 
 path = '/Users/ilya/Projects/danger_tweets/manually_find_danger_tweets/'
-file = 'tweets_from_search.txt'
+file = 'tweets_from_search_june6th.txt'
 
 tweet_list = []
 with open(path + file) as data:
@@ -16,4 +16,4 @@ data = pd.DataFrame(tweet_list)
 data['human_coded'] = 0
 data['dangerous'] = ''
 
-data.to_csv(path + 'human_rated_tweets_from_search.csv')
+data.to_csv(path + 'human_rated_tweets_from_search_june6th.csv')

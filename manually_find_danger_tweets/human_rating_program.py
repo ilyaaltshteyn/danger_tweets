@@ -7,11 +7,11 @@ import pandas as pd
 
 path = '/Users/ilya/Projects/danger_tweets/manually_find_danger_tweets/'
 
-data = pd.read_csv(path + 'human_rated_tweets_from_search.csv')
+data = pd.read_csv(path + 'human_rated_tweets_from_search_june6th.csv')
 
 for row in range(len(data)):
     if data.ix[row,'human_coded'] == 0:
         data.ix[row,'human_coded'] = 1
         data.ix[row,'dangerous'] = raw_input(data.ix[row,1])
-        data.to_csv(path + 'human_rated_tweets_from_search.csv', index = False)
+        data.to_csv(path + 'human_rated_tweets_from_search_june6th.csv', index = False)
 
