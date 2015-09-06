@@ -8,7 +8,7 @@
 import pandas as pd
 # import numpy as np
 
-path = '/Users/ilya/Projects/danger_tweets/train_model/update_models_1/'
+path = '/Users/ilya/Projects/danger_tweets/manually_find_danger_tweets/find_ngrams_august_2015/'
 # filename = 'target_danger_ngram_tweets.txt'
 # file_length = sum(1 for line in open(path + filename))
 
@@ -24,7 +24,7 @@ path = '/Users/ilya/Projects/danger_tweets/train_model/update_models_1/'
 
 # data.to_csv(path + 'ngram_tweets_hand_coded.csv')
 
-data = pd.read_csv(path + 'ngram_tweets_hand_coded.csv')
+data = pd.read_csv(path + 'ngram_tweets_hand_coded_2.csv')
 
 
 
@@ -32,5 +32,5 @@ for row in range(len(data)):
     if data.ix[row,'human_coded'] == 0:
         data.ix[row,'human_coded'] = 1
         data.ix[row,'dangerous'] = raw_input(data.ix[row,'tweet'])
-        data.to_csv(path + 'ngram_tweets_hand_coded.csv', index = False)
+        data.to_csv(path + 'ngram_tweets_hand_coded_2.csv', index = False)
 
