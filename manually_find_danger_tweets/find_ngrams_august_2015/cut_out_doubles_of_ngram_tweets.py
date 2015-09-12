@@ -35,4 +35,4 @@ print data.tweet[to_drop]
 
 data = data.drop(data.index[to_drop])
 
-data.to_csv()
+data.to_csv(path + 'ngram_tweets_hand_coded_2.csv', index = False)
