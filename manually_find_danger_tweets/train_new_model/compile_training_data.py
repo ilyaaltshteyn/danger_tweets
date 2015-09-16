@@ -39,6 +39,7 @@ def replace_bad_chars(tweet):
 
 all_data['clean_tweets'] = all_data.tweet.apply(replace_bad_chars)
 
+all_data.index = range(len(all_data))
 
 # Remove nearly-identical tweets from training set:
 vec = CountVectorizer()
@@ -63,8 +64,8 @@ for i in set(not_to_drop):
     if i in to_drop:
         del to_drop[to_drop.index(i)]
 
-print all_data.tweet[to_drop]
+print all_data.clean_tweets[to_drop]
 
-data = data.drop(data.index[to_drop])
+data = all_data.drop(all_data.index[to_drop])
 
-data.to_csv(path + 'ngram_tweets_hand_coded_2.csv', index = False)
+data.to_csv(path + 'master_train_data.csv', index = False)
